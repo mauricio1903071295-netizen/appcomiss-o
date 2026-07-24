@@ -285,6 +285,7 @@ let searchTerm = '';
 let statusFilter = 'todos';
 let activeTab = 'checklist';
 let resultadosView = 'chart';
+let resultadosGranularity = 'ano';
 let showPastMonths = false;
 let correctingId = null;
 
@@ -669,14 +670,24 @@ function getEnriched() {
   });
 }
 
-function buildChartData(enriched, keys) {
+function summarizeStatus(items) {
+  const byStatus = {};
+  STATUS_ORDER.forEach(s => { byStatus[s] = { total: 0, count: 0 }; });
+  items.forEach(v => { byStatus[v.status].total += v.comissao; byStatus[v.status].count += 1; });
+  const total = STATUS_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
+  return { byStatus, total };
+}
+function buildChartData(enriched, keys, granularity) {
+  if (granularity === 'ano') {
+    const years = [...new Set(keys.map(k => k.slice(0, 4)))].sort();
+    return years.map(y => {
+      const items = enriched.filter(v => v.mesKey && v.mesKey.slice(0, 4) === y);
+      return { key: y, label: y, shortLabel: y, ...summarizeStatus(items) };
+    });
+  }
   return keys.map(k => {
     const items = enriched.filter(v => v.mesKey === k);
-    const byStatus = {};
-    STATUS_ORDER.forEach(s => { byStatus[s] = { total: 0, count: 0 }; });
-    items.forEach(v => { byStatus[v.status].total += v.comissao; byStatus[v.status].count += 1; });
-    const total = STATUS_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
-    return { mesKey: k, byStatus, total };
+    return { key: k, label: monthLabel(k), shortLabel: monthShort(k), ...summarizeStatus(items) };
   });
 }
 
@@ -711,12 +722,12 @@ function resultadosChartHtml(chartData) {
       const y = yCursor - h;
       yCursor = y - 2;
       return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="2" fill="${STATUS_COLORS[status]}"
-                class="chart-seg" data-status="${status}" data-mes="${d.mesKey}" data-value="${val.toFixed(2)}" data-count="${d.byStatus[status].count}"></rect>`;
+                class="chart-seg" data-status="${status}" data-label="${d.label}" data-value="${val.toFixed(2)}" data-count="${d.byStatus[status].count}"></rect>`;
     }).join('');
     const labelY = Math.max(padTop - 8, yCursor - 4);
     return segs +
       `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" class="chart-total-label">${d.total ? fmtBRLInt(d.total) : ''}</text>` +
-      `<text x="${(x + barW / 2).toFixed(1)}" y="${(padTop + plotH + 18).toFixed(1)}" text-anchor="middle" class="chart-x-label">${monthShort(d.mesKey)}</text>`;
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${(padTop + plotH + 18).toFixed(1)}" text-anchor="middle" class="chart-x-label">${d.shortLabel}</text>`;
   }).join('');
 
   return `
@@ -727,12 +738,12 @@ function resultadosChartHtml(chartData) {
   `;
 }
 
-function resultadosTableHtml(chartData) {
+function resultadosTableHtml(chartData, granularity) {
   return `
     <table class="results-table">
       <thead>
         <tr>
-          <th>Mês</th>
+          <th>${granularity === 'ano' ? 'Ano' : 'Mês'}</th>
           ${STATUS_ORDER.map(s => `<th class="num">${STATUS_LABELS[s]}</th>`).join('')}
           <th class="num">Total</th>
         </tr>
@@ -740,7 +751,7 @@ function resultadosTableHtml(chartData) {
       <tbody>
         ${chartData.map(d => `
           <tr>
-            <td>${monthLabel(d.mesKey)}</td>
+            <td>${d.label}</td>
             ${STATUS_ORDER.map(s => `<td class="num">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
             <td class="num" style="font-weight:600">${fmtBRL(d.total)}</td>
           </tr>
@@ -751,21 +762,22 @@ function resultadosTableHtml(chartData) {
 }
 
 function resultadosSectionHtml(enriched, keys) {
-  const chartData = buildChartData(enriched, keys);
+  const chartData = buildChartData(enriched, keys, resultadosGranularity);
   return `
     <div class="results-head">
-      <h2>Resultados por mês</h2>
+      <h2>Resultados por ${resultadosGranularity === 'ano' ? 'ano' : 'mês'}</h2>
       <div class="head-actions">
+        <button class="toggle-pill ${resultadosGranularity === 'ano' ? 'active' : ''}" data-granularity="ano">Ano</button>
+        <button class="toggle-pill ${resultadosGranularity === 'mes' ? 'active' : ''}" data-granularity="mes">Mês a mês</button>
         <button class="toggle-pill ${resultadosView === 'chart' ? 'active' : ''}" data-results-view="chart">Gráfico</button>
         <button class="toggle-pill ${resultadosView === 'tabela' ? 'active' : ''}" data-results-view="tabela">Tabela</button>
       </div>
     </div>
     ${chartData.length ? `
       ${resultadosLegendHtml()}
-      ${resultadosView === 'chart' ? resultadosChartHtml(chartData) : resultadosTableHtml(chartData)}
+      ${resultadosView === 'chart' ? resultadosChartHtml(chartData) : resultadosTableHtml(chartData, resultadosGranularity)}
     ` : `
-      <div class="empty"><p>Nenhuma venda registrada ainda.</p></div>
-    `}
+      <div class="empty"><p>Nenhuma venda registrada ainda.</p></div>`}
   `;
 }
 
@@ -961,6 +973,7 @@ function render() {
   document.getElementById('btn-toggle-past')?.addEventListener('click', () => { showPastMonths = !showPastMonths; render(); });
   document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => { activeTab = el.getAttribute('data-tab'); render(); }));
   document.querySelectorAll('[data-results-view]').forEach(el => el.addEventListener('click', () => { resultadosView = el.getAttribute('data-results-view'); render(); }));
+  document.querySelectorAll('[data-granularity]').forEach(el => el.addEventListener('click', () => { resultadosGranularity = el.getAttribute('data-granularity'); render(); }));
   const chartTooltip = document.getElementById('chart-tooltip');
   document.querySelectorAll('.chart-seg').forEach(el => {
     el.addEventListener('mousemove', (e) => {
@@ -968,8 +981,8 @@ function render() {
       const status = el.getAttribute('data-status');
       const value = parseFloat(el.getAttribute('data-value'));
       const count = el.getAttribute('data-count');
-      const mes = el.getAttribute('data-mes');
-      chartTooltip.innerHTML = `<b>${STATUS_LABELS[status]}</b><br>${monthLabel(mes)}<br>${fmtBRL(value)} · ${count} venda${count==1?'':'s'}`;
+      const label = el.getAttribute('data-label');
+      chartTooltip.innerHTML = `<b>${STATUS_LABELS[status]}</b><br>${label}<br>${fmtBRL(value)} · ${count} venda${count==1?'':'s'}`;
       chartTooltip.style.left = (e.pageX + 12) + 'px';
       chartTooltip.style.top = (e.pageY + 12) + 'px';
       chartTooltip.style.opacity = '1';
