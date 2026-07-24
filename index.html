@@ -199,6 +199,43 @@
   .empty .ti { font-size: 32px; color: var(--paper-line); }
   .empty p { font-size: 14px; margin: 10px 0 16px; }
 
+  .tabs-row { display: flex; gap: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 24px; }
+  .tab-btn {
+    border: none; background: transparent; color: var(--ink-soft); font-size: 14px; font-weight: 500;
+    padding: 10px 4px; margin-right: 20px; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab-btn.active { color: var(--forest); border-bottom-color: var(--forest); }
+  .tab-btn:hover { color: var(--forest); }
+
+  .results-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .results-head h2 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--forest); margin: 0; }
+  .results-head .head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
+  .legend-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+
+  .chart-scroll { overflow-x: auto; padding-bottom: 8px; margin-bottom: 28px; }
+  .chart-scroll::-webkit-scrollbar { height: 6px; }
+  .chart-scroll::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 4px; }
+  .chart-svg { display: block; }
+  .chart-grid { stroke: var(--paper-line); stroke-width: 1; }
+  .chart-grid-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; fill: var(--ink-soft); }
+  .chart-total-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500; fill: var(--ink); }
+  .chart-x-label { font-size: 10px; fill: var(--ink-soft); }
+  .chart-seg { cursor: pointer; }
+  .chart-tooltip {
+    position: absolute; pointer-events: none; opacity: 0; transition: opacity 0.1s;
+    background: var(--forest); color: #fff; font-size: 12px; padding: 8px 10px; border-radius: 8px;
+    line-height: 1.5; z-index: 10; box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+  }
+
+  .results-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 28px; }
+  .results-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); font-weight: 500; padding: 8px; border-bottom: 2px solid var(--forest); }
+  .results-table th.num { text-align: right; }
+  .results-table td { padding: 9px 8px; border-bottom: 1px solid var(--paper-line); }
+  .results-table td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+
   .auth-card {
     max-width: 380px; margin: 90px auto; background: var(--card); border: 1px solid var(--paper-line);
     border-radius: 14px; padding: 28px;
@@ -246,6 +283,8 @@ let editingId = null;
 let selectedMonthKey = null;
 let searchTerm = '';
 let statusFilter = 'todos';
+let activeTab = 'checklist';
+let resultadosView = 'chart';
 let showPastMonths = false;
 let correctingId = null;
 
@@ -599,6 +638,23 @@ function ledgerRowsHtml(filtered, curKey, enriched) {
   return html;
 }
 
+const STATUS_ORDER = ['previsto', 'atrasado', 'aguardando_nota', 'aguardando_contador', 'faturado'];
+const STATUS_LABELS = {
+  previsto: 'Previsto',
+  atrasado: 'Atrasado',
+  aguardando_nota: 'Aguardando nota',
+  aguardando_contador: 'Aguardando contador',
+  faturado: 'Faturado'
+};
+const STATUS_COLORS = {
+  previsto: '#7A5CB5',
+  atrasado: '#A63A3A',
+  aguardando_nota: '#A8751F',
+  aguardando_contador: '#2E5AA6',
+  faturado: '#1E7A49'
+};
+function fmtBRLInt(v) { return 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR'); }
+
 function getEnriched() {
   const now = new Date(); const curKey = monthKeyFromDate(now);
   return vendas.map(v => {
@@ -611,6 +667,106 @@ function getEnriched() {
     } else if (efetivo < curKey) status = 'atrasado';
     return { ...v, comissao: v.comissao ?? calcComissao(v.valor), mesKey: efetivo, mesPrevisto: calcMesPrevisto(v), status };
   });
+}
+
+function buildChartData(enriched, keys) {
+  return keys.map(k => {
+    const items = enriched.filter(v => v.mesKey === k);
+    const byStatus = {};
+    STATUS_ORDER.forEach(s => { byStatus[s] = { total: 0, count: 0 }; });
+    items.forEach(v => { byStatus[v.status].total += v.comissao; byStatus[v.status].count += 1; });
+    const total = STATUS_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
+    return { mesKey: k, byStatus, total };
+  });
+}
+
+function resultadosLegendHtml() {
+  return `<div class="chart-legend">${STATUS_ORDER.map(s => `
+    <span class="legend-chip"><span class="legend-dot" style="background:${STATUS_COLORS[s]}"></span>${STATUS_LABELS[s]}</span>
+  `).join('')}</div>`;
+}
+
+function resultadosChartHtml(chartData) {
+  if (!chartData.length) return '';
+  const maxTotal = Math.max(1, ...chartData.map(d => d.total));
+  const plotH = 200, barW = 34, gap = 20, padTop = 26, padBottom = 30;
+  const svgW = chartData.length * (barW + gap) + gap;
+  const svgH = padTop + plotH + padBottom;
+  const gridN = 4;
+
+  const grid = Array.from({ length: gridN + 1 }).map((_, i) => {
+    const y = padTop + plotH - (i / gridN) * plotH;
+    const val = (maxTotal / gridN) * i;
+    return `<line x1="0" y1="${y.toFixed(1)}" x2="${svgW}" y2="${y.toFixed(1)}" class="chart-grid"></line>
+            <text x="4" y="${(y - 4).toFixed(1)}" class="chart-grid-label">${fmtBRLInt(val)}</text>`;
+  }).join('');
+
+  const bars = chartData.map((d, i) => {
+    const x = gap + i * (barW + gap);
+    let yCursor = padTop + plotH;
+    const segs = STATUS_ORDER.map(status => {
+      const val = d.byStatus[status].total;
+      if (val <= 0) return '';
+      const h = Math.max((val / maxTotal) * plotH - 1, 0);
+      const y = yCursor - h;
+      yCursor = y - 2;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="2" fill="${STATUS_COLORS[status]}"
+                class="chart-seg" data-status="${status}" data-mes="${d.mesKey}" data-value="${val.toFixed(2)}" data-count="${d.byStatus[status].count}"></rect>`;
+    }).join('');
+    const labelY = Math.max(padTop - 8, yCursor - 4);
+    return segs +
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${labelY.toFixed(1)}" text-anchor="middle" class="chart-total-label">${d.total ? fmtBRLInt(d.total) : ''}</text>` +
+      `<text x="${(x + barW / 2).toFixed(1)}" y="${(padTop + plotH + 18).toFixed(1)}" text-anchor="middle" class="chart-x-label">${monthShort(d.mesKey)}</text>`;
+  }).join('');
+
+  return `
+    <div class="chart-scroll">
+      <svg viewBox="0 0 ${svgW} ${svgH}" width="${svgW}" height="${svgH}" class="chart-svg">${grid}${bars}</svg>
+    </div>
+    <div class="chart-tooltip" id="chart-tooltip"></div>
+  `;
+}
+
+function resultadosTableHtml(chartData) {
+  return `
+    <table class="results-table">
+      <thead>
+        <tr>
+          <th>Mês</th>
+          ${STATUS_ORDER.map(s => `<th class="num">${STATUS_LABELS[s]}</th>`).join('')}
+          <th class="num">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${chartData.map(d => `
+          <tr>
+            <td>${monthLabel(d.mesKey)}</td>
+            ${STATUS_ORDER.map(s => `<td class="num">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
+            <td class="num" style="font-weight:600">${fmtBRL(d.total)}</td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function resultadosSectionHtml(enriched, keys) {
+  const chartData = buildChartData(enriched, keys);
+  return `
+    <div class="results-head">
+      <h2>Resultados por mês</h2>
+      <div class="head-actions">
+        <button class="toggle-pill ${resultadosView === 'chart' ? 'active' : ''}" data-results-view="chart">Gráfico</button>
+        <button class="toggle-pill ${resultadosView === 'tabela' ? 'active' : ''}" data-results-view="tabela">Tabela</button>
+      </div>
+    </div>
+    ${chartData.length ? `
+      ${resultadosLegendHtml()}
+      ${resultadosView === 'chart' ? resultadosChartHtml(chartData) : resultadosTableHtml(chartData)}
+    ` : `
+      <div class="empty"><p>Nenhuma venda registrada ainda.</p></div>
+    `}
+  `;
 }
 
 function render() {
@@ -688,6 +844,11 @@ function render() {
       </div>
     </div>
 
+    <div class="tabs-row">
+      <button class="tab-btn ${activeTab==='checklist' ? 'active' : ''}" data-tab="checklist">Checklist</button>
+      <button class="tab-btn ${activeTab==='resultados' ? 'active' : ''}" data-tab="resultados">Resultados</button>
+    </div>
+
     <div class="hero">
       <div class="hero-card">
         <div class="eyebrow">Total em ${monthLabel(curKey)}</div>
@@ -705,6 +866,8 @@ function render() {
         <div class="caption2">${atrasados.length} venda(s) para corrigir o mês</div>
       </div>
     </div>
+
+    ${activeTab === 'resultados' ? resultadosSectionHtml(enriched, keys) : `
 
     ${keys.length ? `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -780,6 +943,7 @@ function render() {
       ${!searchTerm && !selectedMonthKey && statusFilter === 'todos' ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
     </div>
     `}
+    `}
   `;
 
   document.getElementById('btn-logout')?.addEventListener('click', handleLogout);
@@ -795,6 +959,23 @@ function render() {
   document.getElementById('btn-clear-filter')?.addEventListener('click', () => { selectedMonthKey = null; render(); });
   document.querySelectorAll('[data-status-filter]').forEach(el => el.addEventListener('click', () => { statusFilter = el.getAttribute('data-status-filter'); render(); }));
   document.getElementById('btn-toggle-past')?.addEventListener('click', () => { showPastMonths = !showPastMonths; render(); });
+  document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => { activeTab = el.getAttribute('data-tab'); render(); }));
+  document.querySelectorAll('[data-results-view]').forEach(el => el.addEventListener('click', () => { resultadosView = el.getAttribute('data-results-view'); render(); }));
+  const chartTooltip = document.getElementById('chart-tooltip');
+  document.querySelectorAll('.chart-seg').forEach(el => {
+    el.addEventListener('mousemove', (e) => {
+      if (!chartTooltip) return;
+      const status = el.getAttribute('data-status');
+      const value = parseFloat(el.getAttribute('data-value'));
+      const count = el.getAttribute('data-count');
+      const mes = el.getAttribute('data-mes');
+      chartTooltip.innerHTML = `<b>${STATUS_LABELS[status]}</b><br>${monthLabel(mes)}<br>${fmtBRL(value)} · ${count} venda${count==1?'':'s'}`;
+      chartTooltip.style.left = (e.pageX + 12) + 'px';
+      chartTooltip.style.top = (e.pageY + 12) + 'px';
+      chartTooltip.style.opacity = '1';
+    });
+    el.addEventListener('mouseleave', () => { if (chartTooltip) chartTooltip.style.opacity = '0'; });
+  });
   document.querySelectorAll('[data-pedir-nota]').forEach(el => el.addEventListener('click', () => fecharMes(el.getAttribute('data-pedir-nota'))));
   document.querySelectorAll('[data-nota-recebida]').forEach(el => el.addEventListener('click', () => marcarMesFaturado(el.getAttribute('data-nota-recebida'))));
   document.getElementById('search-input')?.addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
