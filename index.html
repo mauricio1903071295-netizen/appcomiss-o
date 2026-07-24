@@ -209,7 +209,10 @@
 
   .results-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
   .results-head h2 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--forest); margin: 0; }
-  .results-head .head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+  .results-head .head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .year-nav { display: flex; align-items: center; gap: 6px; margin-right: 4px; }
+  .year-nav .icon-btn { font-size: 15px; }
+  .year-nav-label { font-family: 'IBM Plex Mono', monospace; font-size: 14px; font-weight: 500; color: var(--forest); min-width: 40px; text-align: center; }
 
   .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
   .legend-chip { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--ink-soft); }
@@ -286,6 +289,7 @@ let statusFilter = 'todos';
 let activeTab = 'checklist';
 let resultadosView = 'chart';
 let resultadosGranularity = 'ano';
+let resultadosAno = new Date().getFullYear();
 let showPastMonths = false;
 let correctingId = null;
 
@@ -677,12 +681,12 @@ function summarizeStatus(items) {
   const total = STATUS_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
   return { byStatus, total };
 }
-function buildChartData(enriched, keys, granularity) {
+function buildChartData(enriched, keys, granularity, ano) {
   if (granularity === 'ano') {
-    const years = [...new Set(keys.map(k => k.slice(0, 4)))].sort();
-    return years.map(y => {
-      const items = enriched.filter(v => v.mesKey && v.mesKey.slice(0, 4) === y);
-      return { key: y, label: y, shortLabel: y, ...summarizeStatus(items) };
+    const monthsOfYear = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, '0')}`);
+    return monthsOfYear.map(k => {
+      const items = enriched.filter(v => v.mesKey === k);
+      return { key: k, label: monthLabel(k), shortLabel: monthShort(k).split('/')[0], ...summarizeStatus(items) };
     });
   }
   return keys.map(k => {
@@ -743,7 +747,7 @@ function resultadosTableHtml(chartData, granularity) {
     <table class="results-table">
       <thead>
         <tr>
-          <th>${granularity === 'ano' ? 'Ano' : 'Mês'}</th>
+          <th>Mês</th>
           ${STATUS_ORDER.map(s => `<th class="num">${STATUS_LABELS[s]}</th>`).join('')}
           <th class="num">Total</th>
         </tr>
@@ -762,13 +766,20 @@ function resultadosTableHtml(chartData, granularity) {
 }
 
 function resultadosSectionHtml(enriched, keys) {
-  const chartData = buildChartData(enriched, keys, resultadosGranularity);
+  const chartData = buildChartData(enriched, keys, resultadosGranularity, resultadosAno);
   return `
     <div class="results-head">
-      <h2>Resultados por ${resultadosGranularity === 'ano' ? 'ano' : 'mês'}</h2>
+      <h2>${resultadosGranularity === 'ano' ? `Resultados de ${resultadosAno}` : 'Resultados mês a mês'}</h2>
       <div class="head-actions">
-        <button class="toggle-pill ${resultadosGranularity === 'ano' ? 'active' : ''}" data-granularity="ano">Ano</button>
-        <button class="toggle-pill ${resultadosGranularity === 'mes' ? 'active' : ''}" data-granularity="mes">Mês a mês</button>
+        ${resultadosGranularity === 'ano' ? `
+          <div class="year-nav">
+            <button class="icon-btn" data-ano-nav="-1" aria-label="Ano anterior">←</button>
+            <span class="year-nav-label">${resultadosAno}</span>
+            <button class="icon-btn" data-ano-nav="1" aria-label="Próximo ano">→</button>
+          </div>
+        ` : ''}
+        <button class="toggle-pill ${resultadosGranularity === 'ano' ? 'active' : ''}" data-granularity="ano">Por ano</button>
+        <button class="toggle-pill ${resultadosGranularity === 'mes' ? 'active' : ''}" data-granularity="mes">Histórico completo</button>
         <button class="toggle-pill ${resultadosView === 'chart' ? 'active' : ''}" data-results-view="chart">Gráfico</button>
         <button class="toggle-pill ${resultadosView === 'tabela' ? 'active' : ''}" data-results-view="tabela">Tabela</button>
       </div>
@@ -974,6 +985,7 @@ function render() {
   document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => { activeTab = el.getAttribute('data-tab'); render(); }));
   document.querySelectorAll('[data-results-view]').forEach(el => el.addEventListener('click', () => { resultadosView = el.getAttribute('data-results-view'); render(); }));
   document.querySelectorAll('[data-granularity]').forEach(el => el.addEventListener('click', () => { resultadosGranularity = el.getAttribute('data-granularity'); render(); }));
+  document.querySelectorAll('[data-ano-nav]').forEach(el => el.addEventListener('click', () => { resultadosAno += parseInt(el.getAttribute('data-ano-nav')); render(); }));
   const chartTooltip = document.getElementById('chart-tooltip');
   document.querySelectorAll('.chart-seg').forEach(el => {
     el.addEventListener('mousemove', (e) => {
