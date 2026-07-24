@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
   :root {
@@ -163,6 +162,12 @@
   tbody td { padding: 9px 8px; border-bottom: 1px solid var(--paper-line); vertical-align: middle; }
   tbody td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
   tbody td.center { text-align: center; }
+  .month-divider-row td { padding: 14px 8px 6px; border-bottom: 1px solid var(--paper-line); }
+  .month-divider-row:first-child td { padding-top: 0; }
+  .month-divider { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; }
+  .month-divider-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--forest); }
+  .month-divider-total { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  .tag-atual { background: var(--gold-bg); color: var(--gold); font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-left: 8px; font-weight: 500; text-transform: none; letter-spacing: 0; }
   tbody tr.is-confirmado { background: rgba(63,107,79,0.05); }
   tbody tr.is-atrasado { background: rgba(166,58,58,0.05); }
   tbody tr:hover { background: #FBF8EF; }
@@ -177,8 +182,7 @@
     width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--paper-line);
     display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: #fff;
   }
-  .check-circle.checked { background: var(--receber); border-color: var(--receber); color: #fff; }
-  .check-circle.checked i { font-size: 13px; }
+  .check-circle.checked { background: var(--receber); border-color: var(--receber); color: #fff; font-size: 12px; font-weight: 600; }
   .check-circle.nf-check.checked { background: var(--nf); border-color: var(--nf); }
   .check-circle.disabled { opacity: 0.35; cursor: not-allowed; }
   .mes-cell { display: flex; align-items: center; gap: 6px; }
@@ -494,6 +498,66 @@ async function fecharMes(mesKey) {
   render();
 }
 
+function vendaRowHtml(v) {
+  return `
+          <tr class="${v.confirmado ? 'is-confirmado' : ''} ${v.status==='atrasado' ? 'is-atrasado' : ''}">
+            <td class="center"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'✓':''}</span></td>
+            <td class="center"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="NF solicitada ao contador">${v.nfSolicitada?'✓':''}</span></td>
+            <td class="cliente-cell">${v.cliente}</td>
+            <td><span class="plano-tag">${v.plano}</span></td>
+            <td class="num">${fmtBRL(v.valor)}</td>
+            <td class="num">${fmtBRL(v.comissao)}</td>
+            <td>
+              ${correctingId === v.id ? `
+                <div class="mes-editor">
+                  <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
+                  <button class="icon-btn" data-apply-correct="${v.id}" title="Salvar">✓</button>
+                  <button class="icon-btn" data-cancel-correct title="Cancelar">✕</button>
+                </div>
+              ` : `
+                <div class="mes-cell">
+                  <span>${monthShort(v.mesKey)}${v.mesCorrigido ? ' <span style="font-size:11px;color:var(--gold)" title="mês corrigido">↳</span>' : ''}</span>
+                  <button class="mes-edit-btn" data-correct="${v.id}" title="Corrigir mês">✎</button>
+                  <button class="mes-edit-btn" data-push="${v.id}" title="Empurrar p/ próximo mês">→</button>
+                  ${v.mesCorrigido ? `<button class="mes-edit-btn" data-reset="${v.id}" title="Voltar ao mês previsto">↺</button>` : ''}
+                </div>
+              `}
+            </td>
+            <td><span class="status-badge ${v.status}">${
+              v.status==='previsto' ? 'Previsto' : v.status==='confirmado' ? 'Confirmado' : v.status==='nf' ? 'NF pedida' : 'Atrasado'
+            }</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="icon-btn" data-edit="${v.id}" aria-label="Editar">✎</button>
+                <button class="icon-btn" data-del="${v.id}" aria-label="Excluir">🗑</button>
+              </div>
+            </td>
+          </tr>
+  `;
+}
+function ledgerRowsHtml(filtered, curKey) {
+  let html = '';
+  let i = 0;
+  while (i < filtered.length) {
+    const mesKey = filtered[i].mesKey;
+    let total = 0, count = 0, j = i;
+    while (j < filtered.length && filtered[j].mesKey === mesKey) { total += filtered[j].comissao; count++; j++; }
+    html += `
+          <tr class="month-divider-row">
+            <td colspan="9">
+              <div class="month-divider">
+                <span class="month-divider-label">${monthLabel(mesKey)}${mesKey===curKey ? '<span class="tag-atual">mês atual</span>' : ''}</span>
+                <span class="month-divider-total">${fmtBRL(total)} · ${count} venda${count===1?'':'s'}</span>
+              </div>
+            </td>
+          </tr>
+    `;
+    for (let k = i; k < j; k++) html += vendaRowHtml(filtered[k]);
+    i = j;
+  }
+  return html;
+}
+
 function getEnriched() {
   const now = new Date(); const curKey = monthKeyFromDate(now);
   return vendas.map(v => {
@@ -552,9 +616,9 @@ function render() {
         <div class="sub">${qtdVendas} venda${qtdVendas===1?'':'s'} registrada${qtdVendas===1?'':'s'} · comissão fixa de ${PERCENTUAL_COMISSAO}% do valor do contrato</div>
       </div>
       <div class="actions">
-        <button class="btn btn-ghost btn-sm" id="btn-logout" title="Sair"><i class="ti ti-logout"></i></button>
-        <button class="btn btn-ghost btn-sm" id="btn-settings"><i class="ti ti-settings"></i></button>
-        <button class="btn btn-primary" id="btn-nova"><i class="ti ti-plus" style="vertical-align:-2px;margin-right:4px"></i>Nova venda</button>
+        <button class="btn btn-ghost btn-sm" id="btn-logout" title="Sair">Sair</button>
+        <button class="btn btn-ghost btn-sm" id="btn-settings">⚙ Config</button>
+        <button class="btn btn-primary" id="btn-nova">+ Nova venda</button>
       </div>
     </div>
 
@@ -637,7 +701,7 @@ function render() {
     <div class="ledger-head">
       <h2>${selectedMonthKey ? monthLabel(selectedMonthKey) : 'Checklist de comissões'}</h2>
       <div class="head-actions">
-        ${itensFecharMes.length ? `<button class="btn btn-primary btn-sm" id="btn-fechar-mes"><i class="ti ti-brand-whatsapp" style="vertical-align:-2px;margin-right:4px"></i>Fechar mês (${fmtBRL(totalFecharMes)})</button>` : ''}
+        ${itensFecharMes.length ? `<button class="btn btn-primary btn-sm" id="btn-fechar-mes">💬 Fechar mês (${fmtBRL(totalFecharMes)})</button>` : ''}
         ${selectedMonthKey ? `<button class="btn btn-ghost btn-sm" id="btn-clear-filter">Limpar filtro</button>` : ''}
         <button class="toggle-pill ${onlyPendentes ? 'active' : ''}" id="btn-only-pendentes">Só pendentes</button>
         <button class="toggle-pill ${showConcluidos ? 'active' : ''}" id="btn-show-concluidos">Mostrar já faturados</button>
@@ -661,46 +725,12 @@ function render() {
         </tr>
       </thead>
       <tbody>
-        ${filtered.map(v => `
-          <tr class="${v.confirmado ? 'is-confirmado' : ''} ${v.status==='atrasado' ? 'is-atrasado' : ''}">
-            <td class="center"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'<i class="ti ti-check"></i>':''}</span></td>
-            <td class="center"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="NF solicitada ao contador">${v.nfSolicitada?'<i class="ti ti-check"></i>':''}</span></td>
-            <td class="cliente-cell">${v.cliente}</td>
-            <td><span class="plano-tag">${v.plano}</span></td>
-            <td class="num">${fmtBRL(v.valor)}</td>
-            <td class="num">${fmtBRL(v.comissao)}</td>
-            <td>
-              ${correctingId === v.id ? `
-                <div class="mes-editor">
-                  <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
-                  <button class="icon-btn" data-apply-correct="${v.id}" title="Salvar"><i class="ti ti-check"></i></button>
-                  <button class="icon-btn" data-cancel-correct title="Cancelar"><i class="ti ti-x"></i></button>
-                </div>
-              ` : `
-                <div class="mes-cell">
-                  <span>${monthShort(v.mesKey)}${v.mesCorrigido ? ' <i class="ti ti-corner-down-right" style="font-size:11px;color:var(--gold)" title="mês corrigido"></i>' : ''}</span>
-                  <button class="mes-edit-btn" data-correct="${v.id}" title="Corrigir mês"><i class="ti ti-pencil"></i></button>
-                  <button class="mes-edit-btn" data-push="${v.id}" title="Empurrar p/ próximo mês"><i class="ti ti-arrow-right"></i></button>
-                  ${v.mesCorrigido ? `<button class="mes-edit-btn" data-reset="${v.id}" title="Voltar ao mês previsto"><i class="ti ti-restore"></i></button>` : ''}
-                </div>
-              `}
-            </td>
-            <td><span class="status-badge ${v.status}">${
-              v.status==='previsto' ? 'Previsto' : v.status==='confirmado' ? 'Confirmado' : v.status==='nf' ? 'NF pedida' : 'Atrasado'
-            }</span></td>
-            <td>
-              <div class="row-actions">
-                <button class="icon-btn" data-edit="${v.id}" aria-label="Editar"><i class="ti ti-edit"></i></button>
-                <button class="icon-btn" data-del="${v.id}" aria-label="Excluir"><i class="ti ti-trash"></i></button>
-              </div>
-            </td>
-          </tr>
-        `).join('')}
+        ${ledgerRowsHtml(filtered, curKey)}
       </tbody>
     </table>
     ` : `
     <div class="empty">
-      <i class="ti ti-receipt-2"></i>
+      <span style="font-size:32px">🧾</span>
       <p>${searchTerm || selectedMonthKey || onlyPendentes ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
       ${!searchTerm && !selectedMonthKey && !onlyPendentes ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
     </div>
