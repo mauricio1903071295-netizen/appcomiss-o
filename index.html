@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Livro de Comissões</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<style>
+  :root {
+    --paper: #F6F2E7;
+    --paper-line: #E4DCC6;
+    --ink: #23281F;
+    --ink-soft: #5C6152;
+    --forest: #1F3A2E;
+    --forest-light: #2E5443;
+    --gold: #C08A28;
+    --gold-bg: #FAF0DA;
+    --gold-light: #E7C877;
+    --receber: #3F6B4F;
+    --receber-bg: #E4EEE3;
+    --atraso: #A63A3A;
+    --atraso-bg: #F7E6E1;
+    --nf: #2E5AA6;
+    --nf-bg: #E2EAF6;
+    --card: #FFFDF7;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'IBM Plex Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .masthead {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    border-bottom: 2px solid var(--forest);
+    padding-bottom: 18px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .masthead h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 30px;
+    margin: 0;
+    color: var(--forest);
+    letter-spacing: -0.02em;
+  }
+  .masthead .sub { font-size: 13px; color: var(--ink-soft); margin-top: 4px; }
+  .masthead .actions { display: flex; gap: 8px; }
+
+  button { font-family: 'IBM Plex Sans', sans-serif; cursor: pointer; }
+  .btn {
+    border: 1.5px solid var(--forest);
+    background: transparent;
+    color: var(--forest);
+    padding: 9px 16px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.15s, color 0.15s;
+  }
+  .btn:hover { background: var(--forest); color: #fff; }
+  .btn-primary { background: var(--forest); color: #fff; }
+  .btn-primary:hover { background: var(--forest-light); }
+  .btn-ghost { border-color: var(--paper-line); color: var(--ink-soft); }
+  .btn-ghost:hover { background: var(--paper-line); color: var(--ink); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+  .hero { display: grid; grid-template-columns: 1.1fr 1fr 1fr; gap: 16px; margin-bottom: 28px; }
+  .hero-card {
+    background: var(--forest); color: #fff; border-radius: 14px; padding: 20px 22px;
+  }
+  .hero-card .eyebrow { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gold-light); font-weight: 500; }
+  .hero-card .big { font-family: 'IBM Plex Mono', monospace; font-size: 32px; font-weight: 500; margin: 8px 0 2px; }
+  .hero-card .caption { font-size: 12px; color: #C7D3C9; }
+  .hero-side {
+    background: var(--card); border: 1px solid var(--paper-line); border-radius: 14px;
+    padding: 18px 20px; display: flex; flex-direction: column; justify-content: center; gap: 6px;
+  }
+  .hero-side .eyebrow2 { font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); font-weight: 500; margin-bottom: 2px; }
+  .hero-side .big2 { font-family: 'IBM Plex Mono', monospace; font-size: 26px; font-weight: 500; }
+  .hero-side.warn .big2 { color: var(--gold); }
+  .hero-side.warn { border-color: var(--gold-light); }
+  .hero-side .caption2 { font-size: 12px; color: var(--ink-soft); }
+
+  .strip-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 10px; font-weight: 500; }
+  .strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 32px; }
+  .strip::-webkit-scrollbar { height: 6px; }
+  .strip::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 4px; }
+  .month-card {
+    flex: 0 0 auto; min-width: 128px; background: var(--card); border: 1px solid var(--paper-line);
+    border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s, transform 0.1s;
+  }
+  .month-card:hover { border-color: var(--gold); transform: translateY(-1px); }
+  .month-card.active { border-color: var(--forest); border-width: 2px; background: var(--receber-bg); }
+  .month-card.current { position: relative; }
+  .month-card.current::before {
+    content: ''; position: absolute; top: 8px; right: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold);
+  }
+  .month-card .m-label { font-size: 12px; color: var(--ink-soft); text-transform: capitalize; }
+  .month-card .m-val { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 500; margin-top: 4px; }
+  .month-card .m-breakdown { display: flex; gap: 8px; margin-top: 6px; font-size: 10.5px; }
+  .month-card .m-breakdown span { display: flex; align-items: center; gap: 3px; color: var(--ink-soft); }
+  .dot-sw { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+  .dot-sw.confirmado { background: var(--receber); }
+  .dot-sw.pendente { background: var(--gold); }
+  .dot-sw.atrasado { background: var(--atraso); }
+
+  .panel {
+    background: var(--card); border: 1px solid var(--paper-line); border-radius: 14px;
+    padding: 22px 24px; margin-bottom: 28px; display: none;
+  }
+  .panel.open { display: block; }
+  .panel h2 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0 0 16px; color: var(--forest); }
+  .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
+  .field input, .field select {
+    border: 1px solid var(--paper-line); border-radius: 7px; padding: 9px 10px; font-size: 14px;
+    font-family: 'IBM Plex Sans', sans-serif; background: #fff; color: var(--ink);
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--forest); box-shadow: 0 0 0 3px rgba(31,58,46,0.12); }
+  .preview {
+    margin-top: 16px; padding: 12px 14px; background: var(--paper); border-radius: 8px; font-size: 13px;
+    color: var(--ink-soft); display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+  .preview b { color: var(--forest); font-family: 'IBM Plex Mono', monospace; }
+  .panel-actions { display: flex; gap: 10px; margin-top: 18px; }
+
+  .settings-panel { background: var(--card); border: 1px solid var(--paper-line); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; display: none; }
+  .settings-panel.open { display: block; }
+  .settings-panel h2 { font-family: 'Fraunces', serif; font-size: 16px; margin: 0 0 14px; color: var(--forest); }
+  .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .radio-row { display: flex; gap: 16px; font-size: 13px; margin-top: 4px; }
+  .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+  .ledger-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 12px; flex-wrap: wrap; }
+  .ledger-head h2 { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 600; color: var(--forest); margin: 0; }
+  .ledger-head .head-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .search-box input { border: 1px solid var(--paper-line); border-radius: 7px; padding: 7px 10px; font-size: 13px; width: 180px; }
+  .toggle-pill {
+    border: 1px solid var(--paper-line); background: var(--card); color: var(--ink-soft);
+    padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+  }
+  .toggle-pill.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); font-weight: 500; padding: 8px 8px; border-bottom: 2px solid var(--forest); }
+  thead th.num { text-align: right; }
+  thead th.center { text-align: center; }
+  tbody td { padding: 9px 8px; border-bottom: 1px solid var(--paper-line); vertical-align: middle; }
+  tbody td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
+  tbody td.center { text-align: center; }
+  tbody tr.is-confirmado { background: rgba(63,107,79,0.05); }
+  tbody tr.is-atrasado { background: rgba(166,58,58,0.05); }
+  tbody tr:hover { background: #FBF8EF; }
+  .cliente-cell { font-weight: 500; }
+  .plano-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--receber-bg); color: var(--receber); font-weight: 500; white-space: nowrap; }
+  .status-badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
+  .status-badge.previsto { background: var(--gold-bg); color: var(--gold); }
+  .status-badge.confirmado { background: var(--receber-bg); color: var(--receber); }
+  .status-badge.nf { background: var(--nf-bg); color: var(--nf); }
+  .status-badge.atrasado { background: var(--atraso-bg); color: var(--atraso); }
+  .check-circle {
+    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--paper-line);
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: #fff;
+  }
+  .check-circle.checked { background: var(--receber); border-color: var(--receber); color: #fff; }
+  .check-circle.checked i { font-size: 13px; }
+  .check-circle.nf-check.checked { background: var(--nf); border-color: var(--nf); }
+  .check-circle.disabled { opacity: 0.35; cursor: not-allowed; }
+  .mes-cell { display: flex; align-items: center; gap: 6px; }
+  .mes-edit-btn { background: none; border: none; color: var(--ink-soft); padding: 2px; border-radius: 5px; font-size: 13px; }
+  .mes-edit-btn:hover { background: var(--paper-line); color: var(--ink); }
+  .mes-editor { display: flex; align-items: center; gap: 6px; }
+  .mes-editor input[type=month] { border: 1px solid var(--paper-line); border-radius: 6px; padding: 4px 6px; font-size: 12px; }
+  .row-actions { display: flex; gap: 2px; justify-content: flex-end; }
+  .icon-btn { background: transparent; border: none; color: var(--ink-soft); padding: 4px 6px; border-radius: 6px; font-size: 14px; }
+  .icon-btn:hover { background: var(--paper-line); color: var(--ink); }
+  .empty { text-align: center; padding: 50px 20px; color: var(--ink-soft); }
+  .empty .ti { font-size: 32px; color: var(--paper-line); }
+  .empty p { font-size: 14px; margin: 10px 0 16px; }
+
+  @media (max-width: 760px) {
+    .hero { grid-template-columns: 1fr; }
+    .grid-form { grid-template-columns: 1fr 1fr; }
+    .settings-grid { grid-template-columns: 1fr; }
+    table { font-size: 12px; }
+  }
+  @media (max-width: 480px) {
+    .grid-form { grid-template-columns: 1fr; }
+    .masthead { flex-direction: column; align-items: flex-start; gap: 12px; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const STORAGE_KEY = 'comissoes_vendas';
+const SETTINGS_KEY = 'comissoes_config';
+const SEED_FLAG_KEY = 'comissoes_seeded_v1';
+const MESES = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MESES_LONGOS = ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const PLANOS = ['Full','Standard','Light Plus','Essentials','Vendas - NF-e','Usuário Adicional','Modulo Avulso','Migração Nuvem','Outro'];
+const PERCENTUAL_COMISSAO = 80;
+
+// Dados históricos importados da planilha (comissões já apuradas até 24/07/2026).
+const SEED_VENDAS = [{"id":"v29612514041891409","dataVenda":"2024-05-01","cliente":"Juliano Cavalca","plano":"Full","valor":1800,"primeiroVencimento":"2024-07-25","comissao":1440,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-09"},{"id":"v58393181104595012","dataVenda":"2024-05-01","cliente":"Lucia Frota","plano":"Vendas - NF-e","valor":282.4,"primeiroVencimento":"2024-06-25","comissao":225.92,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v34533850088622679","dataVenda":"2024-05-01","cliente":"Ana Lucia","plano":"Vendas - NF-e","valor":141.2,"primeiroVencimento":"2024-05-25","comissao":112.96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-07"},{"id":"v15601578889211488","dataVenda":"2024-05-01","cliente":"Werner Arns","plano":"Vendas - NF-e","valor":141.2,"primeiroVencimento":"2024-06-25","comissao":112.96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v48443981479304811","dataVenda":"2024-05-01","cliente":"Fernando Costabe","plano":"Vendas - NF-e","valor":141.2,"primeiroVencimento":"2024-07-25","comissao":112.96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-09"},{"id":"v83810943203744611","dataVenda":"2024-05-01","cliente":"Elson","plano":"Full","valor":1412,"primeiroVencimento":"2024-08-25","comissao":1129.6,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-10"},{"id":"v11154027661553615","dataVenda":"2024-05-01","cliente":"Eduardo","plano":"Vendas - NF-e","valor":250,"primeiroVencimento":"2024-06-25","comissao":200,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v84375868752586574","dataVenda":"2024-05-01","cliente":"Simões","plano":"Vendas - NF-e","valor":141.2,"primeiroVencimento":"2024-06-25","comissao":112.96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v37327926485854527","dataVenda":"2024-06-01","cliente":"Claudinei","plano":"Full","valor":780,"primeiroVencimento":"2024-07-25","comissao":624,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-09"},{"id":"v27967419923132519","dataVenda":"2024-07-01","cliente":"Andrea Bonotto","plano":"Full","valor":1200,"primeiroVencimento":"2024-08-25","comissao":960,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-10"},{"id":"v27024388245736881","dataVenda":"2024-05-01","cliente":"Ezequiel Araujo","plano":"Vendas - NF-e","valor":100,"primeiroVencimento":"2024-06-25","comissao":80,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v70509539133635333","dataVenda":"2024-05-01","cliente":"Gustavo Lara","plano":"Vendas - NF-e","valor":141.2,"primeiroVencimento":"2024-06-25","comissao":112.96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-08"},{"id":"v17636758009598527","dataVenda":"2024-08-01","cliente":"Helena Medeiros","plano":"Essentials","valor":353,"primeiroVencimento":"2024-08-25","comissao":282.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-10"},{"id":"v31970313703737201","dataVenda":"2024-08-01","cliente":"HEIDI RASCHKE","plano":"Vendas - NF-e","valor":81.25,"primeiroVencimento":"2024-07-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-09"},{"id":"v18034576214584733","dataVenda":"2024-08-01","cliente":"Maicon Tombini","plano":"Full","valor":900,"primeiroVencimento":"2024-08-25","comissao":720,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-10"},{"id":"v60928565490022307","dataVenda":"2024-09-01","cliente":"Isabela modulo adicional","plano":"Modulo Avulso","valor":120,"primeiroVencimento":"2024-09-25","comissao":96,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-11"},{"id":"v50967773947262654","dataVenda":"2024-09-01","cliente":"Leandro usuario adicional","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2024-09-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-11"},{"id":"v58893054125678428","dataVenda":"2024-09-01","cliente":"Benjamin","plano":"Standard","valor":800,"primeiroVencimento":"2024-10-25","comissao":640,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v38620151614097065","dataVenda":"2024-09-01","cliente":"Claudio Ferraz","plano":"Usuário Adicional","valor":130,"primeiroVencimento":"2024-10-25","comissao":130,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v46866078160195374","dataVenda":"2024-09-01","cliente":"Karol Caixeta","plano":"Full","valor":1200,"primeiroVencimento":"2024-10-25","comissao":960,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v40092043181799751","dataVenda":"2024-10-01","cliente":"Joaquim","plano":"Full","valor":943,"primeiroVencimento":"2024-10-25","comissao":754.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v53066888063563677","dataVenda":"2024-10-01","cliente":"Mirian","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2024-10-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v76763645704825422","dataVenda":"2024-10-01","cliente":"Joaquim","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2024-10-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2024-12"},{"id":"v48635676800576313","dataVenda":"2024-05-01","cliente":"Paulo Cesar Dias","plano":"Usuário Adicional","valor":90,"primeiroVencimento":"2024-12-25","comissao":90,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v19868804050494752","dataVenda":"2024-10-01","cliente":"Guilherme Cardoso","plano":"Full","valor":1365,"primeiroVencimento":"2024-11-25","comissao":1092,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-01"},{"id":"v15661703310516168","dataVenda":"2024-11-01","cliente":"Claudinei","plano":"Usuário Adicional","valor":195,"primeiroVencimento":"2024-11-25","comissao":195,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-01"},{"id":"v57090071460752084","dataVenda":"2024-11-01","cliente":"werner arns","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2024-11-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-01"},{"id":"v47379730787439179","dataVenda":"2024-11-01","cliente":"Guilherme Knop","plano":"Standard","valor":1090,"primeiroVencimento":"2024-12-25","comissao":872,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v35145266218655339","dataVenda":"2024-12-01","cliente":"Luiz Fernando","plano":"Full","valor":1000,"primeiroVencimento":"2024-12-25","comissao":800,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v53385166766379830","dataVenda":"2024-11-01","cliente":"João Fernando Osório","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2024-12-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v85358834149057543","dataVenda":"2024-11-01","cliente":"Marcelo Bomfim","plano":"Usuário Adicional","valor":80,"primeiroVencimento":"2024-12-25","comissao":80,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v48584353947113266","dataVenda":"2025-12-01","cliente":"Carlos Prestes","plano":"Modulo Avulso","valor":450,"primeiroVencimento":"2025-01-25","comissao":360,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v96823173039762489","dataVenda":"2024-12-01","cliente":"Rafael","plano":"Light Plus","valor":847.2,"primeiroVencimento":"2025-01-25","comissao":677.76,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v18278797804902796","dataVenda":"2024-11-01","cliente":"Somar","plano":"Light Plus","valor":847.2,"primeiroVencimento":"2024-11-25","comissao":677.76,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-01"},{"id":"v84289210993482040","dataVenda":"2025-01-01","cliente":"Master Boi","plano":"Usuário Adicional","valor":520,"primeiroVencimento":"2025-01-25","comissao":520,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v77146864466618668","dataVenda":"2025-01-01","cliente":"Henricus","plano":"Usuário Adicional","valor":260,"primeiroVencimento":"2024-12-25","comissao":260,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-02"},{"id":"v54217938763931188","dataVenda":"2025-01-01","cliente":"Gabriel","plano":"Full","valor":1412,"primeiroVencimento":"2025-02-25","comissao":1129.6,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-04"},{"id":"v56933292828326573","dataVenda":"2025-01-01","cliente":"Fabiano","plano":"Modulo Avulso","valor":450,"primeiroVencimento":"2025-02-25","comissao":360,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-04"},{"id":"v61630298027298123","dataVenda":"2025-01-01","cliente":"Zilnete","plano":"Usuário Adicional","valor":90,"primeiroVencimento":"2025-02-25","comissao":90,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-04"},{"id":"v89807285183461053","dataVenda":"2025-01-01","cliente":"Luiz Fernando","plano":"Usuário Adicional","valor":195,"primeiroVencimento":"2025-01-25","comissao":195,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v99300043123722743","dataVenda":"2025-01-01","cliente":"Izamara","plano":"Light Plus","valor":600,"primeiroVencimento":"2025-01-25","comissao":480,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v99319812755594258","dataVenda":"2025-01-01","cliente":"Felipe Davi","plano":"Usuário Adicional","valor":195,"primeiroVencimento":"2025-01-25","comissao":195,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-03"},{"id":"v75762513698533646","dataVenda":"2025-01-01","cliente":"4WFL","plano":"Usuário Adicional","valor":65,"primeiroVencimento":"2025-02-25","comissao":65,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-04"},{"id":"v95956217989711319","dataVenda":"2025-01-01","cliente":"4WFL","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-02-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-04"},{"id":"v64108288970694923","dataVenda":"2025-02-01","cliente":"ELENICE (JOSI)","plano":"Standard","valor":1000,"primeiroVencimento":"2025-03-25","comissao":800,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v52350865405702290","dataVenda":"2025-02-01","cliente":"MARILIA","plano":"Full","valor":1710,"primeiroVencimento":"2025-03-25","comissao":1368,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v32151973912843103","dataVenda":"2025-03-01","cliente":"RODRIGO(DENILSON)","plano":"Light Plus","valor":900,"primeiroVencimento":"2025-04-25","comissao":720,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v93608399662203705","dataVenda":"2025-03-01","cliente":"Vanderlei (Alice)","plano":"Light Plus","valor":910,"primeiroVencimento":"2025-04-25","comissao":728,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v80193153729547118","dataVenda":"2025-03-01","cliente":"Fazenda Stª Teresinha (Rodrigo)","plano":"Migração Nuvem","valor":139.76,"primeiroVencimento":"2025-04-25","comissao":139.76,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v89436175016202982","dataVenda":"2024-03-01","cliente":"Rafael","plano":"Full","valor":1658,"primeiroVencimento":"2025-04-25","comissao":1326.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v49524346588452049","dataVenda":"2025-03-01","cliente":"4WFL","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-03-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v13708192539154770","dataVenda":"2025-03-01","cliente":"Ariana","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-03-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v48765878320501117","dataVenda":"2025-03-01","cliente":"RODRIGO(DENILSON)","plano":"Modulo Avulso","valor":303,"primeiroVencimento":"2025-04-25","comissao":242.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v20377976849184750","dataVenda":"2025-03-01","cliente":"RODRIGO(DENILSON)","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-04-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v22469596954209423","dataVenda":"2025-04-01","cliente":"RODRIGO(DENILSON)","plano":"Modulo Avulso","valor":315,"primeiroVencimento":"2025-05-25","comissao":252,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v58972849395658953","dataVenda":"2025-03-01","cliente":"Claudinei","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-03-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v52755225661378749","dataVenda":"2025-03-01","cliente":"Luiz Martins","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-03-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-05"},{"id":"v81631786556454119","dataVenda":"2025-04-01","cliente":"Veronica","plano":"Full","valor":1350,"primeiroVencimento":"2025-05-25","comissao":1080,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v27055071427408062","dataVenda":"2025-04-01","cliente":"Elaine","plano":"Light Plus","valor":800,"primeiroVencimento":"2025-05-25","comissao":640,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v84489949877437735","dataVenda":"2025-04-01","cliente":"Elaine","plano":"Modulo Avulso","valor":151.8,"primeiroVencimento":"2025-05-25","comissao":121.44,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v19523191293702612","dataVenda":"2025-04-01","cliente":"DH","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-05-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v80826614005596559","dataVenda":"2025-04-01","cliente":"Claudio","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-05-25","comissao":69.88,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v53727460142474139","dataVenda":"2025-05-01","cliente":"Zilnete","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-05-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-06"},{"id":"v34672380084457912","dataVenda":"2025-05-01","cliente":"Regiane (Tiago Pandolfo)","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-06-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v58970507925668579","dataVenda":"2025-05-01","cliente":"Ediane (Endrigo)","plano":"Usuário Adicional","valor":139.76,"primeiroVencimento":"2025-06-25","comissao":111.81,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v23268153227488260","dataVenda":"2025-05-01","cliente":"Zilnete","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-06-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v18894787450619856","dataVenda":"2025-05-01","cliente":"Brena (Claudio Gorgen","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-06-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v12612887489122528","dataVenda":"2025-05-01","cliente":"Edvania (Reginaldo Verdeiro","plano":"Migração Nuvem","valor":209.64,"primeiroVencimento":"2025-06-25","comissao":167.71,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v51611734629493724","dataVenda":"2025-05-01","cliente":"Jaqueline","plano":"Light Plus","valor":650,"primeiroVencimento":"2025-06-25","comissao":520,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v95444354868428886","dataVenda":"2025-06-01","cliente":"Agro Pegoraro","plano":"Full","valor":1518,"primeiroVencimento":"2025-06-25","comissao":1214.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v38950597946407209","dataVenda":"2025-06-01","cliente":"João Pedro","plano":"Light Plus","valor":750,"primeiroVencimento":"2025-06-25","comissao":600,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v56660113321328454","dataVenda":"2025-06-01","cliente":"Adriano","plano":"Full","valor":1350,"primeiroVencimento":"2025-06-25","comissao":1080,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-07"},{"id":"v84401084927868973","dataVenda":"2025-06-01","cliente":"Rodrigo Leite","plano":"Usuário Adicional","valor":209.64,"primeiroVencimento":"2025-07-25","comissao":167.71,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-08"},{"id":"v43378544363115861","dataVenda":"2025-07-01","cliente":"Flavia (Luiz Fernando)","plano":"Light Plus","valor":500,"primeiroVencimento":"2025-08-25","comissao":400,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-09"},{"id":"v20063692696901821","dataVenda":"2025-07-01","cliente":"Lucas","plano":"Full","valor":1450,"primeiroVencimento":"2025-08-25","comissao":1160,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-09"},{"id":"v93862851854669238","dataVenda":"2025-07-01","cliente":"Rafael Grando","plano":"Usuário Adicional","valor":139.76,"primeiroVencimento":"2025-07-25","comissao":111.81,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-08"},{"id":"v37682401080271931","dataVenda":"2025-07-01","cliente":"Claudia Eliane","plano":"Full","valor":1200,"primeiroVencimento":"2025-09-25","comissao":960,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-10"},{"id":"v99376584896342312","dataVenda":"2025-07-01","cliente":"Helena","plano":"Light Plus","valor":119.2,"primeiroVencimento":"2025-08-25","comissao":95.36,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-09"},{"id":"v42721266006562122","dataVenda":"2025-07-01","cliente":"HM (Eduardo)","plano":"Light Plus","valor":800,"primeiroVencimento":"2025-09-25","comissao":640,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-10"},{"id":"v21965565646094853","dataVenda":"2025-07-01","cliente":"Valdir Carlos Donato","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-07-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-08"},{"id":"v31105631451355033","dataVenda":"2025-08-01","cliente":"Bibiana","plano":"Light Plus","valor":800,"primeiroVencimento":"2025-09-25","comissao":640,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-10"},{"id":"v83748109632849565","dataVenda":"2025-08-01","cliente":"Ray","plano":"Light Plus","valor":750,"primeiroVencimento":"2025-10-25","comissao":600,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-11"},{"id":"v45917126395866147","dataVenda":"2025-08-01","cliente":"Lupercio (Giseli)","plano":"Full","valor":1518,"primeiroVencimento":"2025-10-25","comissao":1214.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-11"},{"id":"v56696545991337484","dataVenda":"2025-08-01","cliente":"Jone (JOSE LUIZ)","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-08-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-09"},{"id":"v62769922442648491","dataVenda":"2025-08-01","cliente":"Luciana","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-09-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-10"},{"id":"v11635203275558508","dataVenda":"2025-09-01","cliente":"Luiz (4wfl","plano":"Usuário Adicional","valor":209.64,"primeiroVencimento":"2025-09-25","comissao":167.71,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-10"},{"id":"v22889196050139808","dataVenda":"2025-08-01","cliente":"Luiz (4wfl)","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-08-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-09"},{"id":"v99000877281075345","dataVenda":"2025-09-01","cliente":"Vitoria (guilherme camps)","plano":"Standard","valor":1300,"primeiroVencimento":"2025-10-25","comissao":1040,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-11"},{"id":"v74993347124205669","dataVenda":"2025-10-01","cliente":"Tomaz (Keity)","plano":"Standard","valor":1300,"primeiroVencimento":"2025-11-25","comissao":1040,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-12"},{"id":"v87058488465209900","dataVenda":"2025-10-01","cliente":"HM (Eduardo)","plano":"Vendas - NF-e","valor":353,"primeiroVencimento":"2025-11-25","comissao":282.4,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-12"},{"id":"v63244861607079666","dataVenda":"2025-11-01","cliente":"Paula (Guilherme Antoniolli","plano":"Full","valor":1587.88,"primeiroVencimento":"2025-11-25","comissao":1270.3,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-12"},{"id":"v28239153663433200","dataVenda":"2025-10-10","cliente":"Luiz (4wfl)","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2025-10-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-11"},{"id":"v30283604362072753","dataVenda":"2025-10-10","cliente":"Luiz (4wfl)","plano":"Modulo Avulso","valor":151.8,"primeiroVencimento":"2025-10-25","comissao":121.44,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2025-11"},{"id":"v57895561787305616","dataVenda":"2025-11-01","cliente":"Luis Felipe Casali","plano":"Standard","valor":987.73,"primeiroVencimento":"2026-12-25","comissao":790.18,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2027-01"},{"id":"v47048595334836617","dataVenda":"2026-01-01","cliente":"Sebastião","plano":"Modulo Avulso","valor":650,"primeiroVencimento":"2026-03-10","comissao":520,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-04"},{"id":"v98917161049349004","dataVenda":"2026-01-01","cliente":"Ademir","plano":"Light Plus","valor":1134.7,"primeiroVencimento":"2026-03-10","comissao":907.76,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-04"},{"id":"v26237158174877939","dataVenda":"2025-09-01","cliente":"Werner Arns","plano":"Modulo Avulso","valor":445.4,"primeiroVencimento":"2026-03-10","comissao":356.32,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-04"},{"id":"v58697599693081722","dataVenda":"2026-02-01","cliente":"Henrique Alipradini","plano":"Migração Nuvem","valor":1080,"primeiroVencimento":"2026-02-25","comissao":864,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-03"},{"id":"v68669405549583143","dataVenda":"2025-10-01","cliente":"Mateus Suzin","plano":"Light Plus","valor":759,"primeiroVencimento":"2026-02-25","comissao":607.2,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-03"},{"id":"v38400984719658239","dataVenda":"2026-01-01","cliente":"4WFL","plano":"Usuário Adicional","valor":69.88,"primeiroVencimento":"2026-01-25","comissao":55.9,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-02"},{"id":"v29671365526142232","dataVenda":"2025-10-01","cliente":"Agromed","plano":"Full","valor":1219.6,"primeiroVencimento":"2026-01-25","comissao":975.68,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-02"},{"id":"v36051232585948041","dataVenda":"2025-03-01","cliente":"Const. São Bento","plano":"Standard","valor":972.6,"primeiroVencimento":"2026-04-25","comissao":778.08,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-05"},{"id":"v17349867819546050","dataVenda":"2026-03-01","cliente":"Alexandre","plano":"Light Plus","valor":1002,"primeiroVencimento":"2026-05-10","comissao":801.6,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-06"},{"id":"v46952086535105088","dataVenda":"2026-03-01","cliente":"Daldi","plano":"Full","valor":1998.48,"primeiroVencimento":"2026-05-10","comissao":1598.78,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-06"},{"id":"v28110456888266794","dataVenda":"2026-03-01","cliente":"4WFL","plano":"Usuário Adicional","valor":74.62,"primeiroVencimento":"2026-04-25","comissao":59.7,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-05"},{"id":"v51658171183893662","dataVenda":"2026-03-01","cliente":"4WFL","plano":"Usuário Adicional","valor":74.62,"primeiroVencimento":"2026-04-25","comissao":59.7,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-05"},{"id":"v41173335276427755","dataVenda":"2026-02-01","cliente":"RUBEM ANSELMO","plano":"Usuário Adicional","valor":74.62,"primeiroVencimento":"2026-03-10","comissao":59.7,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-04"},{"id":"v41526124518986442","dataVenda":"2026-04-01","cliente":"JOSE DA LAMARDA","plano":"Light Plus","valor":1530,"primeiroVencimento":"2026-05-10","comissao":1224,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-06"},{"id":"v56911701574103608","dataVenda":"2026-05-01","cliente":"Antonio Sala","plano":"Light Plus","valor":1100,"primeiroVencimento":"2026-06-10","comissao":880,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-07"},{"id":"v77263830527111634","dataVenda":"2026-05-01","cliente":"Alberto","plano":"Light Plus","valor":1050,"primeiroVencimento":"2026-07-10","comissao":840,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-08"},{"id":"v92800896093354644","dataVenda":"2026-04-01","cliente":"Rayane","plano":"Modulo Avulso","valor":161.73,"primeiroVencimento":"2026-05-10","comissao":129.38,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-06"},{"id":"v90999580738426728","dataVenda":"2026-05-01","cliente":"Jaqueline","plano":"Modulo Avulso","valor":151.8,"primeiroVencimento":"2026-05-10","comissao":121.44,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-06"},{"id":"v49222826564421387","dataVenda":"2026-04-01","cliente":"Ademir","plano":"Usuário Adicional","valor":74.62,"primeiroVencimento":"2026-04-25","comissao":59.7,"confirmado":true,"nfSolicitada":false,"mesCorrigido":"2026-05"},{"id":"v44001539520907528","dataVenda":"2026-05-01","cliente":"Carmem","plano":"Migração Nuvem","valor":74.62,"primeiroVencimento":"2026-07-10","comissao":59.7,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-08"},{"id":"v59019675590842137","dataVenda":"2026-06-01","cliente":"Cesar Eduardo","plano":"Full","valor":2755.7,"primeiroVencimento":"2026-07-10","comissao":2204.56,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-08"},{"id":"v71773618043769346","dataVenda":"2026-06-01","cliente":"Manoel (Leandro)","plano":"Light Plus","valor":972.6,"primeiroVencimento":"2026-08-10","comissao":778.08,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-09"},{"id":"v68262786824071452","dataVenda":"2026-07-01","cliente":"Cesar Eduardo","plano":"Usuário Adicional","valor":149.24,"primeiroVencimento":"2026-08-10","comissao":119.39,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-09"},{"id":"v55954878783063925","dataVenda":"2026-07-01","cliente":"Antonio Mariani","plano":"Light Plus","valor":1621,"primeiroVencimento":"2026-09-10","comissao":1296.8,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-10"},{"id":"v56728537683141626","dataVenda":"2026-07-01","cliente":"Gustavo (Francisco)","plano":"Full","valor":2500,"primeiroVencimento":"2026-09-10","comissao":2000,"confirmado":false,"nfSolicitada":false,"mesCorrigido":"2026-10"}];
+
+let vendas = [];
+let config = { regra: 'mes_seguinte', diasPagamento: 60 };
+let panelOpen = false;
+let settingsOpen = false;
+let editingId = null;
+let selectedMonthKey = null;
+let searchTerm = '';
+let onlyPendentes = false;
+let correctingId = null;
+
+function fmtBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+function parseDate(s) { if (!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
+function addDays(date, days) { const d = new Date(date); d.setDate(d.getDate() + days); return d; }
+function monthKeyFromDate(date) { return date.getFullYear() + '-' + String(date.getMonth()+1).padStart(2,'0'); }
+function monthKeyAdd(key, n) {
+  const [y,m] = key.split('-').map(Number);
+  const d = new Date(y, m-1+n, 1);
+  return monthKeyFromDate(d);
+}
+function monthLabel(key) { const [y,m] = key.split('-').map(Number); return MESES_LONGOS[m-1] + ' de ' + y; }
+function monthShort(key) { const [y,m] = key.split('-').map(Number); return MESES[m-1] + '/' + String(y).slice(2); }
+
+function calcComissao(valor) { return Math.round(valor * (PERCENTUAL_COMISSAO/100) * 100) / 100; }
+function calcMesPrevisto(venda) {
+  const venc = parseDate(venda.primeiroVencimento);
+  if (!venc) return null;
+  if (config.regra === 'mes_seguinte') {
+    return monthKeyFromDate(new Date(venc.getFullYear(), venc.getMonth()+1, 1));
+  }
+  return monthKeyFromDate(addDays(venc, config.diasPagamento));
+}
+function mesEfetivo(venda) {
+  return venda.mesCorrigido || calcMesPrevisto(venda);
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      vendas = JSON.parse(raw);
+    } else if (!localStorage.getItem(SEED_FLAG_KEY)) {
+      vendas = SEED_VENDAS.slice();
+      localStorage.setItem(SEED_FLAG_KEY, '1');
+      saveVendas();
+    } else {
+      vendas = [];
+    }
+  } catch (e) { vendas = []; }
+  try { const raw2 = localStorage.getItem(SETTINGS_KEY); if (raw2) config = { ...config, ...JSON.parse(raw2) }; }
+  catch (e) {}
+  render();
+}
+function saveVendas() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vendas)); } catch (e) { console.error(e); } }
+function saveConfig() { try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(config)); } catch (e) { console.error(e); } }
+
+function openPanel(venda) {
+  panelOpen = true; editingId = venda ? venda.id : null; render();
+  setTimeout(() => { if (venda) fillForm(venda); document.getElementById('f-cliente')?.focus(); }, 0);
+}
+function closePanel() { panelOpen = false; editingId = null; render(); }
+function fillForm(v) {
+  document.getElementById('f-data').value = v.dataVenda || '';
+  document.getElementById('f-cliente').value = v.cliente || '';
+  document.getElementById('f-plano').value = v.plano || 'Full';
+  document.getElementById('f-valor').value = v.valor || '';
+  document.getElementById('f-vencimento').value = v.primeiroVencimento || '';
+  updatePreview();
+}
+function readForm() {
+  return {
+    dataVenda: document.getElementById('f-data').value,
+    cliente: document.getElementById('f-cliente').value.trim(),
+    plano: document.getElementById('f-plano').value,
+    valor: parseFloat(document.getElementById('f-valor').value) || 0,
+    primeiroVencimento: document.getElementById('f-vencimento').value
+  };
+}
+function updatePreview() {
+  const f = readForm();
+  const prev = document.getElementById('preview-box');
+  if (!prev) return;
+  if (!f.valor || !f.primeiroVencimento) { prev.innerHTML = '<span>Preencha o valor do contrato e o vencimento para ver a prévia</span>'; return; }
+  const comissao = calcComissao(f.valor);
+  const mesPrev = calcMesPrevisto(f);
+  prev.innerHTML = '<span>Comissão (80%): <b>' + fmtBRL(comissao) + '</b></span>' +
+    '<span>Recebimento previsto: <b>' + (mesPrev ? monthLabel(mesPrev) : '—') + '</b></span>';
+}
+function submitForm() {
+  const f = readForm();
+  if (!f.cliente || !f.valor || !f.primeiroVencimento || !f.dataVenda) { alert('Preencha data da venda, cliente, valor do contrato e primeiro vencimento.'); return; }
+  const comissao = calcComissao(f.valor);
+  if (editingId) {
+    const idx = vendas.findIndex(v => v.id === editingId);
+    if (idx >= 0) vendas[idx] = { ...vendas[idx], ...f, comissao };
+  } else {
+    vendas.push({ id: 'v' + Date.now() + Math.random().toString(36).slice(2,7), ...f, comissao, confirmado: false, nfSolicitada: false, mesCorrigido: null });
+  }
+  saveVendas(); closePanel();
+}
+function deleteVenda(id) {
+  if (!confirm('Remover esta venda do livro de comissões?')) return;
+  vendas = vendas.filter(v => v.id !== id); saveVendas(); render();
+}
+function toggleSettings() { settingsOpen = !settingsOpen; render(); }
+
+function toggleConfirmado(id) {
+  const v = vendas.find(x => x.id === id); if (!v) return;
+  v.confirmado = !v.confirmado;
+  if (!v.confirmado) v.nfSolicitada = false;
+  saveVendas(); render();
+}
+function toggleNf(id) {
+  const v = vendas.find(x => x.id === id); if (!v || !v.confirmado) return;
+  v.nfSolicitada = !v.nfSolicitada; saveVendas(); render();
+}
+function startCorrect(id) { correctingId = id; render(); }
+function cancelCorrect() { correctingId = null; render(); }
+function applyCorrect(id) {
+  const input = document.getElementById('mes-input-' + id);
+  const v = vendas.find(x => x.id === id); if (!v || !input) return;
+  v.mesCorrigido = input.value;
+  v.confirmado = false; v.nfSolicitada = false;
+  correctingId = null; saveVendas(); render();
+}
+function pushNextMonth(id) {
+  const v = vendas.find(x => x.id === id); if (!v) return;
+  v.mesCorrigido = monthKeyAdd(mesEfetivo(v), 1);
+  v.confirmado = false; v.nfSolicitada = false;
+  saveVendas(); render();
+}
+function resetCorrecao(id) {
+  const v = vendas.find(x => x.id === id); if (!v) return;
+  v.mesCorrigido = null; saveVendas(); render();
+}
+
+function getEnriched() {
+  const now = new Date(); const curKey = monthKeyFromDate(now);
+  return vendas.map(v => {
+    const efetivo = mesEfetivo(v);
+    let status = 'previsto';
+    if (v.confirmado) status = v.nfSolicitada ? 'nf' : 'confirmado';
+    else if (efetivo < curKey) status = 'atrasado';
+    return { ...v, comissao: v.comissao ?? calcComissao(v.valor), mesKey: efetivo, mesPrevisto: calcMesPrevisto(v), status };
+  });
+}
+
+function render() {
+  const app = document.getElementById('app');
+  const enriched = getEnriched();
+  const now = new Date(); const curKey = monthKeyFromDate(now);
+
+  const doMesAtual = enriched.filter(v => v.mesKey === curKey);
+  const totalMesAtual = doMesAtual.reduce((s,v) => s + v.comissao, 0);
+  const pendentesMesAtual = doMesAtual.filter(v => v.status === 'previsto' || v.status === 'atrasado');
+  const totalPendenteMesAtual = pendentesMesAtual.reduce((s,v) => s + v.comissao, 0);
+  const atrasados = enriched.filter(v => v.status === 'atrasado');
+  const totalAtrasado = atrasados.reduce((s,v) => s + v.comissao, 0);
+  const qtdVendas = vendas.length;
+
+  const keys = [...new Set(enriched.map(v => v.mesKey).filter(Boolean))];
+  if (!keys.includes(curKey)) keys.push(curKey);
+  keys.sort();
+  const monthStats = {};
+  keys.forEach(k => {
+    const items = enriched.filter(v => v.mesKey === k);
+    monthStats[k] = {
+      total: items.reduce((s,v)=>s+v.comissao,0),
+      confirmado: items.filter(v=>v.confirmado).reduce((s,v)=>s+v.comissao,0),
+      pendente: items.filter(v=>!v.confirmado && v.status!=='atrasado').reduce((s,v)=>s+v.comissao,0),
+      atrasado: items.filter(v=>v.status==='atrasado').reduce((s,v)=>s+v.comissao,0),
+      count: items.length
+    };
+  });
+
+  let filtered = enriched;
+  if (selectedMonthKey) filtered = filtered.filter(v => v.mesKey === selectedMonthKey);
+  if (onlyPendentes) filtered = filtered.filter(v => v.status === 'previsto' || v.status === 'atrasado');
+  if (searchTerm) { const t = searchTerm.toLowerCase(); filtered = filtered.filter(v => v.cliente.toLowerCase().includes(t) || v.plano.toLowerCase().includes(t)); }
+  filtered = filtered.slice().sort((a,b) => (a.mesKey||'').localeCompare(b.mesKey||'') || a.cliente.localeCompare(b.cliente));
+
+  app.innerHTML = `
+    <div class="masthead">
+      <div>
+        <h1>Livro de comissões</h1>
+        <div class="sub">${qtdVendas} venda${qtdVendas===1?'':'s'} registrada${qtdVendas===1?'':'s'} · comissão fixa de ${PERCENTUAL_COMISSAO}% do valor do contrato</div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-ghost btn-sm" id="btn-settings"><i class="ti ti-settings"></i></button>
+        <button class="btn btn-primary" id="btn-nova"><i class="ti ti-plus" style="vertical-align:-2px;margin-right:4px"></i>Nova venda</button>
+      </div>
+    </div>
+
+    <div class="settings-panel ${settingsOpen ? 'open' : ''}">
+      <h2>Regra de recebimento</h2>
+      <div class="field" style="margin-bottom:14px">
+        <label>Quando cai o recebimento da comissão (usado para prever o mês de novas vendas)</label>
+        <div class="radio-row">
+          <label><input type="radio" name="cfg-regra" value="mes_seguinte" ${config.regra==='mes_seguinte'?'checked':''}> Mês seguinte ao vencimento</label>
+          <label><input type="radio" name="cfg-regra" value="dias" ${config.regra==='dias'?'checked':''}> Nº de dias após o vencimento</label>
+        </div>
+      </div>
+      <div class="settings-grid">
+        <div class="field">
+          <label>Dias até o pagamento (se regra por dias)</label>
+          <input type="number" id="cfg-dias" value="${config.diasPagamento}">
+        </div>
+      </div>
+      <div class="panel-actions">
+        <button class="btn btn-primary btn-sm" id="btn-save-settings">Salvar regra</button>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div class="hero-card">
+        <div class="eyebrow">Total em ${monthLabel(curKey)}</div>
+        <div class="big">${fmtBRL(totalMesAtual)}</div>
+        <div class="caption">${doMesAtual.length} comissão(ões) prevista(s) para este mês</div>
+      </div>
+      <div class="hero-side ${pendentesMesAtual.length ? 'warn' : ''}">
+        <div class="eyebrow2">Pendente de confirmação</div>
+        <div class="big2">${fmtBRL(totalPendenteMesAtual)}</div>
+        <div class="caption2">${pendentesMesAtual.length} item(ns) aguardando seu OK</div>
+      </div>
+      <div class="hero-side ${atrasados.length ? 'warn' : ''}" style="${atrasados.length ? 'border-color:var(--atraso)' : ''}">
+        <div class="eyebrow2" style="${atrasados.length ? 'color:var(--atraso)' : ''}">Atrasados (mês já passou)</div>
+        <div class="big2" style="${atrasados.length ? 'color:var(--atraso)' : ''}">${fmtBRL(totalAtrasado)}</div>
+        <div class="caption2">${atrasados.length} venda(s) para corrigir o mês</div>
+      </div>
+    </div>
+
+    ${keys.length ? `
+    <div class="strip-label">Calendário de recebimento</div>
+    <div class="strip">
+      ${keys.map(k => `
+        <div class="month-card ${selectedMonthKey===k?'active':''} ${k===curKey?'current':''}" data-month="${k}">
+          <div class="m-label">${monthShort(k)}</div>
+          <div class="m-val">${fmtBRL(monthStats[k].total)}</div>
+          <div class="m-breakdown">
+            ${monthStats[k].confirmado ? `<span><i class="dot-sw confirmado"></i>${fmtBRL(monthStats[k].confirmado)}</span>` : ''}
+            ${monthStats[k].atrasado ? `<span><i class="dot-sw atrasado"></i>${fmtBRL(monthStats[k].atrasado)}</span>` : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <div class="panel ${panelOpen ? 'open' : ''}">
+      <h2>${editingId ? 'Editar venda' : 'Registrar nova venda'}</h2>
+      <div class="grid-form">
+        <div class="field"><label>Data da venda</label><input type="date" id="f-data"></div>
+        <div class="field"><label>Cliente</label><input type="text" id="f-cliente" placeholder="Nome do cliente"></div>
+        <div class="field"><label>Plano</label><select id="f-plano">${PLANOS.map(p => `<option value="${p}">${p}</option>`).join('')}</select></div>
+        <div class="field"><label>Valor do contrato (R$)</label><input type="number" step="0.01" id="f-valor" placeholder="0,00"></div>
+        <div class="field"><label>Primeiro vencimento</label><input type="date" id="f-vencimento"></div>
+      </div>
+      <div class="preview" id="preview-box"><span>Preencha o valor do contrato e o vencimento para ver a prévia</span></div>
+      <div class="panel-actions">
+        <button class="btn btn-primary" id="btn-salvar">${editingId ? 'Salvar alterações' : 'Registrar venda'}</button>
+        <button class="btn btn-ghost" id="btn-cancelar">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="ledger-head">
+      <h2>${selectedMonthKey ? monthLabel(selectedMonthKey) : 'Checklist de comissões'}</h2>
+      <div class="head-actions">
+        ${selectedMonthKey ? `<button class="btn btn-ghost btn-sm" id="btn-clear-filter">Limpar filtro</button>` : ''}
+        <button class="toggle-pill ${onlyPendentes ? 'active' : ''}" id="btn-only-pendentes">Só pendentes</button>
+        <div class="search-box"><input type="text" id="search-input" placeholder="Buscar cliente ou plano" value="${searchTerm}"></div>
+      </div>
+    </div>
+
+    ${filtered.length ? `
+    <table>
+      <thead>
+        <tr>
+          <th class="center">OK</th>
+          <th class="center">NF</th>
+          <th>Cliente</th>
+          <th>Plano</th>
+          <th class="num">Valor</th>
+          <th class="num">Comissão</th>
+          <th>Mês</th>
+          <th>Situação</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(v => `
+          <tr class="${v.confirmado ? 'is-confirmado' : ''} ${v.status==='atrasado' ? 'is-atrasado' : ''}">
+            <td class="center"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'<i class="ti ti-check"></i>':''}</span></td>
+            <td class="center"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="NF solicitada ao contador">${v.nfSolicitada?'<i class="ti ti-check"></i>':''}</span></td>
+            <td class="cliente-cell">${v.cliente}</td>
+            <td><span class="plano-tag">${v.plano}</span></td>
+            <td class="num">${fmtBRL(v.valor)}</td>
+            <td class="num">${fmtBRL(v.comissao)}</td>
+            <td>
+              ${correctingId === v.id ? `
+                <div class="mes-editor">
+                  <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
+                  <button class="icon-btn" data-apply-correct="${v.id}" title="Salvar"><i class="ti ti-check"></i></button>
+                  <button class="icon-btn" data-cancel-correct title="Cancelar"><i class="ti ti-x"></i></button>
+                </div>
+              ` : `
+                <div class="mes-cell">
+                  <span>${monthShort(v.mesKey)}${v.mesCorrigido ? ' <i class="ti ti-corner-down-right" style="font-size:11px;color:var(--gold)" title="mês corrigido"></i>' : ''}</span>
+                  <button class="mes-edit-btn" data-correct="${v.id}" title="Corrigir mês"><i class="ti ti-pencil"></i></button>
+                  <button class="mes-edit-btn" data-push="${v.id}" title="Empurrar p/ próximo mês"><i class="ti ti-arrow-right"></i></button>
+                  ${v.mesCorrigido ? `<button class="mes-edit-btn" data-reset="${v.id}" title="Voltar ao mês previsto"><i class="ti ti-restore"></i></button>` : ''}
+                </div>
+              `}
+            </td>
+            <td><span class="status-badge ${v.status}">${
+              v.status==='previsto' ? 'Previsto' : v.status==='confirmado' ? 'Confirmado' : v.status==='nf' ? 'NF pedida' : 'Atrasado'
+            }</span></td>
+            <td>
+              <div class="row-actions">
+                <button class="icon-btn" data-edit="${v.id}" aria-label="Editar"><i class="ti ti-edit"></i></button>
+                <button class="icon-btn" data-del="${v.id}" aria-label="Excluir"><i class="ti ti-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+    ` : `
+    <div class="empty">
+      <i class="ti ti-receipt-2"></i>
+      <p>${searchTerm || selectedMonthKey || onlyPendentes ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
+      ${!searchTerm && !selectedMonthKey && !onlyPendentes ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
+    </div>
+    `}
+  `;
+
+  document.getElementById('btn-nova')?.addEventListener('click', () => openPanel(null));
+  document.getElementById('btn-nova-empty')?.addEventListener('click', () => openPanel(null));
+  document.getElementById('btn-cancelar')?.addEventListener('click', closePanel);
+  document.getElementById('btn-salvar')?.addEventListener('click', submitForm);
+  document.getElementById('btn-settings')?.addEventListener('click', toggleSettings);
+  ['f-valor','f-vencimento','f-plano'].forEach(id => {
+    document.getElementById(id)?.addEventListener('input', updatePreview);
+    document.getElementById(id)?.addEventListener('change', updatePreview);
+  });
+  document.getElementById('btn-clear-filter')?.addEventListener('click', () => { selectedMonthKey = null; render(); });
+  document.getElementById('btn-only-pendentes')?.addEventListener('click', () => { onlyPendentes = !onlyPendentes; render(); });
+  document.getElementById('search-input')?.addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
+  document.querySelectorAll('.month-card').forEach(el => {
+    el.addEventListener('click', () => { const k = el.getAttribute('data-month'); selectedMonthKey = selectedMonthKey === k ? null : k; render(); });
+  });
+  document.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => { const v = vendas.find(x => x.id === el.getAttribute('data-edit')); if (v) openPanel(v); }));
+  document.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => deleteVenda(el.getAttribute('data-del'))));
+  document.querySelectorAll('[data-confirm]').forEach(el => el.addEventListener('click', () => toggleConfirmado(el.getAttribute('data-confirm'))));
+  document.querySelectorAll('[data-nf]').forEach(el => el.addEventListener('click', () => toggleNf(el.getAttribute('data-nf'))));
+  document.querySelectorAll('[data-correct]').forEach(el => el.addEventListener('click', () => startCorrect(el.getAttribute('data-correct'))));
+  document.querySelectorAll('[data-push]').forEach(el => el.addEventListener('click', () => pushNextMonth(el.getAttribute('data-push'))));
+  document.querySelectorAll('[data-reset]').forEach(el => el.addEventListener('click', () => resetCorrecao(el.getAttribute('data-reset'))));
+  document.querySelectorAll('[data-apply-correct]').forEach(el => el.addEventListener('click', () => applyCorrect(el.getAttribute('data-apply-correct'))));
+  document.querySelectorAll('[data-cancel-correct]').forEach(el => el.addEventListener('click', cancelCorrect));
+  document.getElementById('btn-save-settings')?.addEventListener('click', () => {
+    const regra = document.querySelector('input[name="cfg-regra"]:checked')?.value || 'mes_seguinte';
+    const dias = parseInt(document.getElementById('cfg-dias').value) || 60;
+    config = { regra, diasPagamento: dias };
+    saveConfig(); settingsOpen = false; render();
+  });
+
+  if (panelOpen && editingId) { const v = vendas.find(x => x.id === editingId); if (v) fillForm(v); }
+}
+
+loadData();
+</script>
+</body>
+</html>
