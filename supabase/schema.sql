@@ -31,7 +31,8 @@ create policy "vendas_delete_own" on public.vendas
 create table if not exists public.configuracoes (
   user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   regra text not null default 'mes_seguinte',
-  dias_pagamento int not null default 60
+  dias_pagamento int not null default 60,
+  whatsapp_contador text
 );
 
 alter table public.configuracoes enable row level security;
