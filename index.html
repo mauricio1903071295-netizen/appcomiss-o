@@ -317,11 +317,14 @@ async function loadVendas() {
   }
 }
 async function loadConfig() {
-  const { data } = await supa.from('configuracoes').select('*').maybeSingle();
+  const { data, error } = await supa.from('configuracoes').select('*').maybeSingle();
+  if (error) { console.error('Erro ao carregar configurações:', error); return; }
   if (data) config = { regra: data.regra, diasPagamento: data.dias_pagamento, whatsappContador: data.whatsapp_contador || '' };
 }
 async function saveConfig() {
-  await supa.from('configuracoes').upsert({ user_id: session.user.id, regra: config.regra, dias_pagamento: config.diasPagamento, whatsapp_contador: config.whatsappContador });
+  const { error } = await supa.from('configuracoes').upsert({ user_id: session.user.id, regra: config.regra, dias_pagamento: config.diasPagamento, whatsapp_contador: config.whatsappContador });
+  if (error) { alert('Não foi possível salvar as configurações: ' + error.message); return false; }
+  return true;
 }
 
 function renderLoading() {
@@ -499,7 +502,7 @@ async function fecharMes(mesKey) {
   const total = itens.reduce((s,v) => s + v.comissao, 0);
   const ok = confirm(`Pedir nota de ${monthLabel(mesKey)}: ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai abrir o WhatsApp com o valor pro seu contador e marcar essas vendas como "Aguardando contador". Continuar?`);
   if (!ok) return;
-  const texto = `Olá! Preciso de nota fiscal referente às comissões de ${monthLabel(mesKey)}, no valor total de ${fmtBRL(total)} (${itens.length} venda${itens.length===1?'':'s'}).`;
+  const texto = `Olá! Preciso de nota fiscal referente às comissões de ${monthLabel(mesKey)}, no valor total de ${fmtBRL(total)}.`;
   const numero = (config.whatsappContador || '').replace(/\D/g, '');
   const url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(texto);
   window.open(url, '_blank');
