@@ -164,9 +164,10 @@
   tbody td.center { text-align: center; }
   .month-divider-row td { padding: 14px 8px 6px; border-bottom: 1px solid var(--paper-line); }
   .month-divider-row:first-child td { padding-top: 0; }
-  .month-divider { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 6px; }
-  .month-divider-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--forest); }
-  .month-divider-total { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  .month-divider { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+  .month-divider-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--forest); white-space: nowrap; }
+  .month-divider-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .month-divider-total { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
   .tag-atual { background: var(--gold-bg); color: var(--gold); font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-left: 8px; font-weight: 500; text-transform: none; letter-spacing: 0; }
   tbody tr.is-confirmado { background: rgba(63,107,79,0.05); }
   tbody tr.is-atrasado { background: rgba(166,58,58,0.05); }
@@ -244,8 +245,7 @@ let settingsOpen = false;
 let editingId = null;
 let selectedMonthKey = null;
 let searchTerm = '';
-let onlyPendentes = false;
-let showConcluidos = false;
+let statusFilter = 'todos';
 let showPastMonths = false;
 let correctingId = null;
 
@@ -564,19 +564,28 @@ function vendaRowHtml(v) {
           </tr>
   `;
 }
-function ledgerRowsHtml(filtered, curKey) {
+function ledgerRowsHtml(filtered, curKey, enriched) {
   let html = '';
   let i = 0;
   while (i < filtered.length) {
     const mesKey = filtered[i].mesKey;
     let total = 0, count = 0, j = i;
     while (j < filtered.length && filtered[j].mesKey === mesKey) { total += filtered[j].comissao; count++; j++; }
+    const mesItensCompletos = enriched.filter(v => v.mesKey === mesKey);
+    const aguardandoNota = mesItensCompletos.filter(v => v.status === 'aguardando_nota');
+    const aguardandoContador = mesItensCompletos.filter(v => v.status === 'aguardando_contador');
+    const totalNota = aguardandoNota.reduce((s,v)=>s+v.comissao,0);
+    const totalContador = aguardandoContador.reduce((s,v)=>s+v.comissao,0);
     html += `
           <tr class="month-divider-row">
             <td colspan="10">
               <div class="month-divider">
                 <span class="month-divider-label">${monthLabel(mesKey)}${mesKey===curKey ? '<span class="tag-atual">mês atual</span>' : ''}</span>
-                <span class="month-divider-total">${fmtBRL(total)} · ${count} venda${count===1?'':'s'}</span>
+                <div class="month-divider-right">
+                  ${aguardandoNota.length ? `<button class="btn btn-primary btn-sm" data-pedir-nota="${mesKey}">💬 Pedir nota (${fmtBRL(totalNota)})</button>` : ''}
+                  ${aguardandoContador.length ? `<button class="btn btn-primary btn-sm" data-nota-recebida="${mesKey}">✅ Nota recebida (${fmtBRL(totalContador)})</button>` : ''}
+                  <span class="month-divider-total">${fmtBRL(total)} · ${count} venda${count===1?'':'s'}</span>
+                </div>
               </div>
             </td>
           </tr>
@@ -631,15 +640,11 @@ function render() {
     };
   });
 
-  const itensFecharMes = selectedMonthKey ? enriched.filter(v => v.mesKey === selectedMonthKey && v.status === 'aguardando_nota') : [];
-  const totalFecharMes = itensFecharMes.reduce((s,v) => s + v.comissao, 0);
-  const itensMarcarFaturado = selectedMonthKey ? enriched.filter(v => v.mesKey === selectedMonthKey && v.status === 'aguardando_contador') : [];
-  const totalMarcarFaturado = itensMarcarFaturado.reduce((s,v) => s + v.comissao, 0);
-
   let filtered = enriched;
-  if (!showConcluidos) filtered = filtered.filter(v => v.status !== 'faturado');
+  if (statusFilter === 'todos') filtered = filtered.filter(v => v.status !== 'faturado');
+  else if (statusFilter === 'pendentes') filtered = filtered.filter(v => v.status === 'previsto' || v.status === 'atrasado');
+  else filtered = filtered.filter(v => v.status === statusFilter);
   if (selectedMonthKey) filtered = filtered.filter(v => v.mesKey === selectedMonthKey);
-  if (onlyPendentes) filtered = filtered.filter(v => v.status === 'previsto' || v.status === 'atrasado');
   if (searchTerm) { const t = searchTerm.toLowerCase(); filtered = filtered.filter(v => v.cliente.toLowerCase().includes(t) || v.plano.toLowerCase().includes(t)); }
   filtered = filtered.slice().sort((a,b) => (a.mesKey||'').localeCompare(b.mesKey||'') || a.cliente.localeCompare(b.cliente));
 
@@ -735,11 +740,12 @@ function render() {
     <div class="ledger-head">
       <h2>${selectedMonthKey ? monthLabel(selectedMonthKey) : 'Checklist de comissões'}</h2>
       <div class="head-actions">
-        ${itensFecharMes.length ? `<button class="btn btn-primary btn-sm" id="btn-fechar-mes">💬 Pedir nota (${fmtBRL(totalFecharMes)})</button>` : ''}
-        ${itensMarcarFaturado.length ? `<button class="btn btn-primary btn-sm" id="btn-marcar-faturado">✅ Nota recebida (${fmtBRL(totalMarcarFaturado)})</button>` : ''}
         ${selectedMonthKey ? `<button class="btn btn-ghost btn-sm" id="btn-clear-filter">Limpar filtro</button>` : ''}
-        <button class="toggle-pill ${onlyPendentes ? 'active' : ''}" id="btn-only-pendentes">Só pendentes</button>
-        <button class="toggle-pill ${showConcluidos ? 'active' : ''}" id="btn-show-concluidos">Mostrar faturados</button>
+        <button class="toggle-pill ${statusFilter==='todos' ? 'active' : ''}" data-status-filter="todos">Todos</button>
+        <button class="toggle-pill ${statusFilter==='pendentes' ? 'active' : ''}" data-status-filter="pendentes">Só pendentes</button>
+        <button class="toggle-pill ${statusFilter==='aguardando_nota' ? 'active' : ''}" data-status-filter="aguardando_nota">Aguardando nota</button>
+        <button class="toggle-pill ${statusFilter==='aguardando_contador' ? 'active' : ''}" data-status-filter="aguardando_contador">Aguardando contador</button>
+        <button class="toggle-pill ${statusFilter==='faturado' ? 'active' : ''}" data-status-filter="faturado">Faturados</button>
         <div class="search-box"><input type="text" id="search-input" placeholder="Buscar cliente ou plano" value="${searchTerm}"></div>
       </div>
     </div>
@@ -761,14 +767,14 @@ function render() {
         </tr>
       </thead>
       <tbody>
-        ${ledgerRowsHtml(filtered, curKey)}
+        ${ledgerRowsHtml(filtered, curKey, enriched)}
       </tbody>
     </table>
     ` : `
     <div class="empty">
       <span style="font-size:32px">🧾</span>
-      <p>${searchTerm || selectedMonthKey || onlyPendentes ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
-      ${!searchTerm && !selectedMonthKey && !onlyPendentes ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
+      <p>${searchTerm || selectedMonthKey || statusFilter !== 'todos' ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
+      ${!searchTerm && !selectedMonthKey && statusFilter === 'todos' ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
     </div>
     `}
   `;
@@ -784,11 +790,10 @@ function render() {
     document.getElementById(id)?.addEventListener('change', updatePreview);
   });
   document.getElementById('btn-clear-filter')?.addEventListener('click', () => { selectedMonthKey = null; render(); });
-  document.getElementById('btn-only-pendentes')?.addEventListener('click', () => { onlyPendentes = !onlyPendentes; render(); });
-  document.getElementById('btn-show-concluidos')?.addEventListener('click', () => { showConcluidos = !showConcluidos; render(); });
+  document.querySelectorAll('[data-status-filter]').forEach(el => el.addEventListener('click', () => { statusFilter = el.getAttribute('data-status-filter'); render(); }));
   document.getElementById('btn-toggle-past')?.addEventListener('click', () => { showPastMonths = !showPastMonths; render(); });
-  document.getElementById('btn-fechar-mes')?.addEventListener('click', () => { if (selectedMonthKey) fecharMes(selectedMonthKey); });
-  document.getElementById('btn-marcar-faturado')?.addEventListener('click', () => { if (selectedMonthKey) marcarMesFaturado(selectedMonthKey); });
+  document.querySelectorAll('[data-pedir-nota]').forEach(el => el.addEventListener('click', () => fecharMes(el.getAttribute('data-pedir-nota'))));
+  document.querySelectorAll('[data-nota-recebida]').forEach(el => el.addEventListener('click', () => marcarMesFaturado(el.getAttribute('data-nota-recebida'))));
   document.getElementById('search-input')?.addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
   document.querySelectorAll('.month-card').forEach(el => {
     el.addEventListener('click', () => { const k = el.getAttribute('data-month'); selectedMonthKey = selectedMonthKey === k ? null : k; render(); });
