@@ -13,6 +13,7 @@ create table if not exists public.vendas (
   comissao numeric not null,
   confirmado boolean not null default false,
   nf_solicitada boolean not null default false,
+  nf_recebida boolean not null default false,
   mes_corrigido text,
   created_at timestamptz not null default now()
 );
