@@ -797,7 +797,16 @@ function render() {
   const enriched = getEnriched();
   const now = new Date(); const curKey = monthKeyFromDate(now);
 
-  const doMesAtual = enriched.filter(v => v.mesKey === curKey);
+  // Mês em foco: o mês atual, a menos que ele já esteja 100% faturado — nesse
+  // caso avança pro próximo mês que ainda tem algo pendente.
+  const mesesComDados = [...new Set(enriched.map(v => v.mesKey).filter(Boolean))].filter(k => k >= curKey).sort();
+  let focusKey = curKey;
+  for (const k of mesesComDados) {
+    const temPendente = enriched.some(v => v.mesKey === k && v.status !== 'faturado');
+    if (temPendente) { focusKey = k; break; }
+  }
+
+  const doMesAtual = enriched.filter(v => v.mesKey === focusKey);
   const totalMesAtual = doMesAtual.reduce((s,v) => s + v.comissao, 0);
   const pendentesMesAtual = doMesAtual.filter(v => v.status === 'previsto' || v.status === 'atrasado');
   const totalPendenteMesAtual = pendentesMesAtual.reduce((s,v) => s + v.comissao, 0);
@@ -874,7 +883,7 @@ function render() {
 
     <div class="hero">
       <div class="hero-card">
-        <div class="eyebrow">Total em ${monthLabel(curKey)}</div>
+        <div class="eyebrow">Total em ${monthLabel(focusKey)}</div>
         <div class="big">${fmtBRL(totalMesAtual)}</div>
         <div class="caption">${doMesAtual.length} comissão(ões) prevista(s) para este mês</div>
       </div>
@@ -899,7 +908,7 @@ function render() {
     </div>
     <div class="strip">
       ${visibleKeys.map(k => `
-        <div class="month-card ${selectedMonthKey===k?'active':''} ${k===curKey?'current':''}" data-month="${k}">
+        <div class="month-card ${selectedMonthKey===k?'active':''} ${k===focusKey?'current':''}" data-month="${k}">
           <div class="m-label">${monthShort(k)}</div>
           <div class="m-val">${fmtBRL(monthStats[k].total)}</div>
           <div class="m-breakdown">
@@ -956,7 +965,7 @@ function render() {
         </tr>
       </thead>
       <tbody>
-        ${ledgerRowsHtml(filtered, curKey, enriched)}
+        ${ledgerRowsHtml(filtered, focusKey, enriched)}
       </tbody>
     </table>
     ` : `
