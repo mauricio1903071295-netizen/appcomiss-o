@@ -1222,6 +1222,30 @@ function rankingProdutosHtml(enriched, granularity, ano) {
   `;
 }
 
+function receitaXDespesaHtml(chartData, granularity, ano) {
+  const receitaPeriodo = chartData.reduce((s, d) => s + d.total, 0);
+  const despesaPeriodo = granularity === 'ano'
+    ? despesas.filter(d => d.mes.startsWith(String(ano))).reduce((s, d) => s + d.valor, 0)
+    : despesas.reduce((s, d) => s + d.valor, 0);
+  const resultadoLiquido = receitaPeriodo - despesaPeriodo;
+  return `
+    <div class="mini-stats" style="margin-bottom:20px">
+      <div class="mini-stat">
+        <div class="mini-stat-label">Receita${granularity === 'ano' ? ' em ' + ano : ' (histórico)'}</div>
+        <div class="mini-stat-value">${fmtBRL(receitaPeriodo)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Despesas${granularity === 'ano' ? ' em ' + ano : ' (histórico)'}</div>
+        <div class="mini-stat-value">${fmtBRL(despesaPeriodo)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Resultado líquido</div>
+        <div class="mini-stat-value" style="${resultadoLiquido < 0 ? 'color:var(--atraso)' : ''}">${fmtBRL(resultadoLiquido)}</div>
+      </div>
+    </div>
+  `;
+}
+
 function resultadosSectionHtml(enriched, keys) {
   const chartData = buildChartData(enriched, keys, resultadosGranularity, resultadosAno);
   return `
@@ -1241,6 +1265,7 @@ function resultadosSectionHtml(enriched, keys) {
         <button class="toggle-pill ${resultadosView === 'tabela' ? 'active' : ''}" data-results-view="tabela">Tabela</button>
       </div>
     </div>
+    ${chartData.length ? receitaXDespesaHtml(chartData, resultadosGranularity, resultadosAno) : ''}
     ${chartData.length ? `
       <div class="results-body">
         <div class="results-main">
@@ -1477,6 +1502,7 @@ function render() {
       <button class="tab-btn ${activeTab==='despesas' ? 'active' : ''}" data-tab="despesas">Despesas</button>
     </div>
 
+    ${activeTab !== 'despesas' ? `
     <div class="hero">
       <div class="hero-card">
         <div class="eyebrow">Total de receita em ${monthLabel(focusKey)}</div>
@@ -1522,6 +1548,7 @@ function render() {
         <div class="mini-stat-value">${fmtBRL(mediaVariavel)}</div>
       </div>
     </div>
+    ` : ''}
 
     ${activeTab === 'resultados' ? resultadosSectionHtml(enriched, keys) : activeTab === 'despesas' ? despesasTabHtml() : `
 
