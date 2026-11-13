@@ -164,6 +164,25 @@
   .despesa-status.pago { color: var(--receber); }
   .despesa-valor { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; color: var(--forest); margin-bottom: 2px; }
   .despesa-dia { font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
+
+  .despesa-historico-list { display: flex; flex-direction: column; }
+  .despesa-historico-row { padding: 13px 6px; border-bottom: 1px solid var(--paper-line); cursor: pointer; transition: background 0.1s; border-radius: 6px; }
+  .despesa-historico-row:hover { background: rgba(31,58,46,0.035); }
+  .despesa-historico-row:last-child { border-bottom: none; }
+  .despesa-historico-row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 7px; }
+  .despesa-historico-mes { font-size: 14px; color: var(--ink); font-weight: 500; }
+  .despesa-historico-valor { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--forest); white-space: nowrap; }
+  .despesa-historico-bar-bg { background: var(--paper-line); border-radius: 4px; height: 5px; overflow: hidden; margin-bottom: 6px; }
+  .despesa-historico-bar-fill { height: 100%; border-radius: 4px; background: var(--receber); }
+  .despesa-historico-bar-fill.parcial, .despesa-historico-bar-fill.aberto { background: var(--gold-light); }
+  .despesa-historico-status { font-size: 11px; color: var(--ink-soft); }
+  .despesa-historico-status.pago { color: var(--receber); }
+  .despesa-historico-status.parcial, .despesa-historico-status.aberto { color: var(--atraso); }
+  .despesa-historico-detail { margin-top: 11px; padding: 10px 14px; background: var(--paper); border-radius: 8px; display: flex; flex-direction: column; gap: 7px; }
+  .despesa-historico-detail-item { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--ink-soft); }
+  .despesa-historico-detail-item span:first-child { color: var(--ink); }
+  .despesa-historico-detail-item span.ok { color: var(--receber); }
+  .despesa-historico-detail-item span.pendente { color: var(--atraso); font-weight: 500; }
   .radio-row { display: flex; gap: 16px; font-size: 13px; margin-top: 4px; }
   .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 
@@ -412,6 +431,7 @@ let resultadosAno = new Date().getFullYear();
 let showPastMonths = false;
 let correctingId = null;
 let despesasFixasRows = null;
+let expandedDespesaMes = null;
 
 function showToast(message, type) {
   type = type || 'info';
@@ -608,6 +628,10 @@ async function ensureDespesasMesAtual() {
       else despesas.push(despesaFromRow(data));
     }
   }
+}
+function toggleDespesaHistoricoMes(mes) {
+  expandedDespesaMes = expandedDespesaMes === mes ? null : mes;
+  render();
 }
 async function toggleDespesaPago(id) {
   const d = despesas.find(x => x.id === id); if (!d) return;
@@ -1300,6 +1324,46 @@ function despesaCardHtml(d) {
     </div>
   `;
 }
+function despesaHistoricoHtml(mesesComDespesas) {
+  const rows = mesesComDespesas.map(k => {
+    const items = despesas.filter(d => d.mes === k);
+    const total = items.reduce((s, d) => s + d.valor, 0);
+    const pago = items.filter(d => d.pago).reduce((s, d) => s + d.valor, 0);
+    return { mes: k, total, pago, items };
+  });
+  const maxTotal = Math.max(1, ...rows.map(r => r.total));
+  return `
+    <div class="strip-label" style="margin-top:28px">Histórico de despesas</div>
+    <div class="despesa-historico-list">
+      ${rows.map(r => {
+        const aberto = r.total - r.pago;
+        const statusClass = aberto <= 0.004 ? 'pago' : (r.pago > 0 ? 'parcial' : 'aberto');
+        const statusLabel = aberto <= 0.004 ? 'Pago' : (r.pago > 0 ? `Parcial · ${fmtBRL(aberto)} em aberto` : `${fmtBRL(aberto)} em aberto`);
+        const expanded = expandedDespesaMes === r.mes;
+        return `
+          <div class="despesa-historico-row ${expanded ? 'expanded' : ''}" data-despesa-historico-mes="${r.mes}">
+            <div class="despesa-historico-row-top">
+              <span class="despesa-historico-mes">${monthLabel(r.mes)}</span>
+              <span class="despesa-historico-valor">${fmtBRL(r.total)}</span>
+            </div>
+            <div class="despesa-historico-bar-bg"><div class="despesa-historico-bar-fill ${statusClass}" style="width:${Math.max(4, (r.total / maxTotal) * 100).toFixed(1)}%"></div></div>
+            <div class="despesa-historico-status ${statusClass}">${statusLabel}</div>
+            ${expanded ? `
+              <div class="despesa-historico-detail">
+                ${r.items.map(it => `
+                  <div class="despesa-historico-detail-item">
+                    <span>${it.nome}</span>
+                    <span class="${it.pago ? 'ok' : 'pendente'}">${fmtBRL(it.valor)} · ${it.pago ? 'Pago' : 'Em aberto'}</span>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('')}
+    </div>
+  `;
+}
 function despesasTabHtml() {
   const curKey = monthKeyFromDate(new Date());
   const doMes = despesas.filter(d => d.mes === curKey);
@@ -1338,20 +1402,7 @@ function despesasTabHtml() {
         <p>Nenhuma despesa configurada ainda. Vá em ⚙ Config e cadastre o contador, INSS, DAS etc.</p>
       </div>
     `}
-    ${mesesComDespesas.length > 1 ? `
-      <div class="strip-label" style="margin-top:28px">Histórico de despesas</div>
-      <table class="results-table">
-        <thead><tr><th>Mês</th><th class="num">Total</th><th class="num">Pago</th></tr></thead>
-        <tbody>
-          ${mesesComDespesas.map(k => {
-            const items = despesas.filter(d => d.mes === k);
-            const total = items.reduce((s, d) => s + d.valor, 0);
-            const pago = items.filter(d => d.pago).reduce((s, d) => s + d.valor, 0);
-            return `<tr><td data-label="Mês">${monthLabel(k)}</td><td class="num" data-label="Total">${fmtBRL(total)}</td><td class="num" data-label="Pago">${fmtBRL(pago)}</td></tr>`;
-          }).join('')}
-        </tbody>
-      </table>
-    ` : ''}
+    ${mesesComDespesas.length > 1 ? despesaHistoricoHtml(mesesComDespesas) : ''}
   `;
 }
 
@@ -1729,6 +1780,7 @@ function render() {
   document.querySelectorAll('[data-df-remove]').forEach(el => el.addEventListener('click', () => removeDespesaFixaRow(parseInt(el.getAttribute('data-df-remove')))));
   document.querySelectorAll('[data-df-rec-idx]').forEach(el => el.addEventListener('change', () => setDespesaFixaRecorrencia(parseInt(el.getAttribute('data-df-rec-idx')), el.value)));
   document.querySelectorAll('[data-despesa-pago]').forEach(el => el.addEventListener('click', () => toggleDespesaPago(el.getAttribute('data-despesa-pago'))));
+  document.querySelectorAll('[data-despesa-historico-mes]').forEach(el => el.addEventListener('click', () => toggleDespesaHistoricoMes(el.getAttribute('data-despesa-historico-mes'))));
 
   if (panelOpen && editingId) { const v = vendas.find(x => x.id === editingId); if (v) fillForm(v); }
 }
