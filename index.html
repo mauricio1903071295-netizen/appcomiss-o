@@ -246,6 +246,19 @@
   .results-table td { padding: 9px 8px; border-bottom: 1px solid var(--paper-line); }
   .results-table td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
 
+  .results-body { display: flex; gap: 24px; align-items: flex-start; }
+  .results-main { flex: 1; min-width: 0; }
+  .ranking-card { flex: 0 0 280px; background: var(--card); border: 1px solid var(--paper-line); border-radius: 12px; padding: 18px; }
+  .ranking-title { font-size: 13px; font-weight: 600; color: var(--forest); margin-bottom: 16px; }
+  .ranking-row { margin-bottom: 13px; }
+  .ranking-row:last-child { margin-bottom: 0; }
+  .ranking-row-top { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; margin-bottom: 4px; }
+  .ranking-plano { color: var(--ink); font-weight: 500; }
+  .ranking-valor { font-family: 'IBM Plex Mono', monospace; color: var(--forest); font-weight: 600; white-space: nowrap; }
+  .ranking-bar-bg { background: var(--paper-line); border-radius: 4px; height: 6px; overflow: hidden; }
+  .ranking-bar-fill { background: var(--gold-light); height: 100%; border-radius: 4px; }
+  .ranking-count { font-size: 11px; color: var(--ink-soft); margin-top: 3px; }
+
   .auth-card {
     max-width: 380px; margin: 90px auto; background: var(--card); border: 1px solid var(--paper-line);
     border-radius: 14px; padding: 28px;
@@ -312,6 +325,8 @@
     .mini-stats { grid-template-columns: 1fr 1fr; }
     .grid-form { grid-template-columns: 1fr 1fr; }
     .settings-grid { grid-template-columns: 1fr; }
+    .results-body { flex-direction: column; }
+    .ranking-card { flex: 0 0 auto; width: 100%; }
   }
   @media (max-width: 480px) {
     .mini-stats { grid-template-columns: 1fr; }
@@ -846,7 +861,7 @@ const STATUS_COLORS = {
 };
 const RENDA_FIXA_KEY = 'renda_fixa';
 const RENDA_FIXA_COLOR = '#1C7C7A';
-const CHART_ORDER = [...STATUS_ORDER, RENDA_FIXA_KEY];
+const CHART_ORDER = [RENDA_FIXA_KEY, ...STATUS_ORDER];
 function chartLabels() { return { ...STATUS_LABELS, [RENDA_FIXA_KEY]: config.rendaFixaNome || 'Receita fixa' }; }
 function chartColors() { return { ...STATUS_COLORS, [RENDA_FIXA_KEY]: RENDA_FIXA_COLOR }; }
 function fmtBRLInt(v) { return 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR'); }
@@ -1050,6 +1065,36 @@ function resultadosTableHtml(chartData, granularity) {
   `;
 }
 
+function rankingProdutosHtml(enriched, granularity, ano) {
+  let items = enriched;
+  if (granularity === 'ano') items = enriched.filter(v => v.mesKey && v.mesKey.startsWith(String(ano)));
+  if (!items.length) return '';
+  const byPlano = {};
+  items.forEach(v => {
+    if (!byPlano[v.plano]) byPlano[v.plano] = { total: 0, count: 0 };
+    byPlano[v.plano].total += v.comissao;
+    byPlano[v.plano].count += 1;
+  });
+  const ranked = Object.entries(byPlano).sort((a, b) => b[1].total - a[1].total).slice(0, 8);
+  if (!ranked.length) return '';
+  const maxTotal = Math.max(1, ...ranked.map(([, d]) => d.total));
+  return `
+    <div class="ranking-card">
+      <div class="ranking-title">Produtos mais vendidos${granularity === 'ano' ? ' em ' + ano : ''}</div>
+      ${ranked.map(([plano, d]) => `
+        <div class="ranking-row">
+          <div class="ranking-row-top">
+            <span class="ranking-plano">${plano}</span>
+            <span class="ranking-valor">${fmtBRL(d.total)}</span>
+          </div>
+          <div class="ranking-bar-bg"><div class="ranking-bar-fill" style="width:${Math.max(4, (d.total / maxTotal) * 100).toFixed(1)}%"></div></div>
+          <div class="ranking-count">${d.count} venda${d.count === 1 ? '' : 's'}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
 function resultadosSectionHtml(enriched, keys) {
   const chartData = buildChartData(enriched, keys, resultadosGranularity, resultadosAno);
   return `
@@ -1070,8 +1115,13 @@ function resultadosSectionHtml(enriched, keys) {
       </div>
     </div>
     ${chartData.length ? `
-      ${resultadosLegendHtml()}
-      ${resultadosView === 'chart' ? resultadosChartHtml(chartData) : resultadosTableHtml(chartData, resultadosGranularity)}
+      <div class="results-body">
+        <div class="results-main">
+          ${resultadosLegendHtml()}
+          ${resultadosView === 'chart' ? resultadosChartHtml(chartData) : resultadosTableHtml(chartData, resultadosGranularity)}
+        </div>
+        ${rankingProdutosHtml(enriched, resultadosGranularity, resultadosAno)}
+      </div>
     ` : `
       <div class="empty"><p>Nenhuma venda registrada ainda.</p></div>`}
   `;
