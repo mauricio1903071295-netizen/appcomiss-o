@@ -123,12 +123,6 @@
   .dot-sw.pendente { background: var(--gold); }
   .dot-sw.atrasado { background: var(--atraso); }
 
-  .panel {
-    background: var(--card); border: 1px solid var(--paper-line); border-radius: 14px;
-    padding: 22px 24px; margin-bottom: 28px; display: none;
-  }
-  .panel.open { display: block; }
-  .panel h2 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0 0 16px; color: var(--forest); }
   .grid-form { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   .field { display: flex; flex-direction: column; gap: 5px; }
   .field label { font-size: 12px; color: var(--ink-soft); font-weight: 500; }
@@ -263,7 +257,7 @@
   .btn:disabled:hover, .btn[disabled]:hover { background: transparent; color: var(--forest); }
   .btn-primary:disabled:hover, .btn-primary[disabled]:hover { background: var(--forest); color: #fff; }
 
-  .panel.open, .settings-panel.open { animation: panel-in 0.16s ease-out; }
+  .settings-panel.open { animation: panel-in 0.16s ease-out; }
   @keyframes panel-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
 
   .toast-container {
@@ -295,7 +289,10 @@
   .modal-box {
     background: var(--card); border-radius: 14px; padding: 24px; max-width: 400px; width: 100%;
     box-shadow: 0 20px 50px rgba(0,0,0,0.28); animation: modal-pop-in 0.16s ease-out;
+    max-height: calc(100vh - 40px); overflow-y: auto;
   }
+  .modal-box.modal-box-wide { max-width: 680px; }
+  .modal-box-wide h2 { font-family: 'Fraunces', serif; font-size: 18px; font-weight: 600; margin: 0 0 16px; color: var(--forest); }
   @keyframes modal-pop-in { from { opacity: 0; transform: scale(0.97) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
   .modal-box h3 { font-family: 'Fraunces', serif; font-size: 17px; margin: 0 0 10px; color: var(--forest); }
   .modal-box p { font-size: 14px; color: var(--ink-soft); margin: 0 0 20px; line-height: 1.55; white-space: pre-line; }
@@ -1095,21 +1092,25 @@ function render() {
       `).join('')}
     </div>` : ''}
 
-    <div class="panel ${panelOpen ? 'open' : ''}">
-      <h2>${editingId ? 'Editar venda' : 'Registrar nova venda'}</h2>
-      <div class="grid-form">
-        <div class="field"><label>Data da venda</label><input type="date" id="f-data"></div>
-        <div class="field"><label>Cliente</label><input type="text" id="f-cliente" placeholder="Nome do cliente"></div>
-        <div class="field"><label>Plano</label><select id="f-plano">${PLANOS.map(p => `<option value="${p}">${p}</option>`).join('')}</select></div>
-        <div class="field"><label>Valor do contrato (R$)</label><input type="number" step="0.01" id="f-valor" placeholder="0,00"></div>
-        <div class="field"><label>Primeiro vencimento</label><input type="date" id="f-vencimento"></div>
-      </div>
-      <div class="preview" id="preview-box"><span>Preencha o valor do contrato e o vencimento para ver a prévia</span></div>
-      <div class="panel-actions">
-        <button class="btn btn-primary" id="btn-salvar">${editingId ? 'Salvar alterações' : 'Registrar venda'}</button>
-        <button class="btn btn-ghost" id="btn-cancelar">Cancelar</button>
+    ${panelOpen ? `
+    <div class="modal-backdrop" id="venda-modal-backdrop">
+      <div class="modal-box modal-box-wide">
+        <h2>${editingId ? 'Editar venda' : 'Registrar nova venda'}</h2>
+        <div class="grid-form">
+          <div class="field"><label>Data da venda</label><input type="date" id="f-data"></div>
+          <div class="field"><label>Cliente</label><input type="text" id="f-cliente" placeholder="Nome do cliente"></div>
+          <div class="field"><label>Plano</label><select id="f-plano">${PLANOS.map(p => `<option value="${p}">${p}</option>`).join('')}</select></div>
+          <div class="field"><label>Valor do contrato (R$)</label><input type="number" step="0.01" id="f-valor" placeholder="0,00"></div>
+          <div class="field"><label>Primeiro vencimento</label><input type="date" id="f-vencimento"></div>
+        </div>
+        <div class="preview" id="preview-box"><span>Preencha o valor do contrato e o vencimento para ver a prévia</span></div>
+        <div class="panel-actions">
+          <button class="btn btn-primary" id="btn-salvar">${editingId ? 'Salvar alterações' : 'Registrar venda'}</button>
+          <button class="btn btn-ghost" id="btn-cancelar">Cancelar</button>
+        </div>
       </div>
     </div>
+    ` : ''}
 
     <div class="ledger-head">
       <h2>${selectedMonthKey ? monthLabel(selectedMonthKey) : 'Checklist de comissões'}</h2>
@@ -1158,6 +1159,7 @@ function render() {
   document.getElementById('btn-nova')?.addEventListener('click', () => openPanel(null));
   document.getElementById('btn-nova-empty')?.addEventListener('click', () => openPanel(null));
   document.getElementById('btn-cancelar')?.addEventListener('click', closePanel);
+  document.getElementById('venda-modal-backdrop')?.addEventListener('click', (e) => { if (e.target.id === 'venda-modal-backdrop') closePanel(); });
   document.getElementById('btn-salvar')?.addEventListener('click', submitForm);
   document.getElementById('btn-settings')?.addEventListener('click', toggleSettings);
   ['f-valor','f-vencimento','f-plano'].forEach(id => {
@@ -1217,6 +1219,9 @@ function render() {
   if (panelOpen && editingId) { const v = vendas.find(x => x.id === editingId); if (v) fillForm(v); }
 }
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && panelOpen) closePanel();
+});
 initSupabase();
 </script>
 </body>
