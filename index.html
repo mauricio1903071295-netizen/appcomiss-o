@@ -155,49 +155,56 @@
   }
   .toggle-pill.active { background: var(--gold-bg); border-color: var(--gold); color: var(--gold); }
 
-  table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  thead th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); font-weight: 500; padding: 8px 8px; border-bottom: 2px solid var(--forest); }
-  thead th.num { text-align: right; }
-  thead th.center { text-align: center; }
-  tbody td { padding: 9px 8px; border-bottom: 1px solid var(--paper-line); vertical-align: middle; }
-  tbody td.num { text-align: right; font-family: 'IBM Plex Mono', monospace; }
-  tbody td.center { text-align: center; }
-  .month-divider-row td { padding: 14px 8px 6px; border-bottom: 1px solid var(--paper-line); }
-  .month-divider-row:first-child td { padding-top: 0; }
-  .month-divider { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
-  .month-divider-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--forest); white-space: nowrap; }
-  .month-divider-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-  .month-divider-total { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); white-space: nowrap; }
-  .tag-atual { background: var(--gold-bg); color: var(--gold); font-size: 10px; padding: 2px 7px; border-radius: 10px; margin-left: 8px; font-weight: 500; text-transform: none; letter-spacing: 0; }
-  tbody tr.is-confirmado { background: rgba(63,107,79,0.05); }
-  tbody tr.is-atrasado { background: rgba(166,58,58,0.05); }
-  tbody tr:hover { background: #FBF8EF; }
-  .cliente-cell { font-weight: 500; }
   .plano-tag { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; background: var(--receber-bg); color: var(--receber); font-weight: 500; white-space: nowrap; }
-  .status-badge { font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 500; white-space: nowrap; }
-  .status-badge.previsto { background: var(--gold-bg); color: var(--gold); }
-  .status-badge.aguardando_nota { background: var(--gold-bg); color: var(--gold); }
-  .status-badge.aguardando_contador { background: var(--nf-bg); color: var(--nf); }
-  .status-badge.faturado { background: #EAEAEA; color: #6B6B6B; }
-  .status-badge.atrasado { background: var(--atraso-bg); color: var(--atraso); }
-  .check-circle {
-    width: 20px; height: 20px; border-radius: 50%; border: 1.5px solid var(--paper-line);
-    display: inline-flex; align-items: center; justify-content: center; cursor: pointer; background: #fff;
-  }
-  .check-circle.checked { background: var(--receber); border-color: var(--receber); color: #fff; font-size: 12px; font-weight: 600; }
-  .check-circle.nf-check.checked { background: var(--nf); border-color: var(--nf); }
-  .check-circle.disabled { opacity: 0.35; cursor: not-allowed; }
   .mes-cell { display: flex; align-items: center; gap: 6px; }
   .mes-edit-btn { background: none; border: none; color: var(--ink-soft); padding: 2px; border-radius: 5px; font-size: 13px; }
   .mes-edit-btn:hover { background: var(--paper-line); color: var(--ink); }
   .mes-editor { display: flex; align-items: center; gap: 6px; }
   .mes-editor input[type=month] { border: 1px solid var(--paper-line); border-radius: 6px; padding: 4px 6px; font-size: 12px; }
-  .row-actions { display: flex; gap: 2px; justify-content: flex-end; }
   .icon-btn { background: transparent; border: none; color: var(--ink-soft); padding: 4px 6px; border-radius: 6px; font-size: 14px; }
   .icon-btn:hover { background: var(--paper-line); color: var(--ink); }
+  .icon-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .icon-btn:disabled:hover { background: transparent; }
   .empty { text-align: center; padding: 50px 20px; color: var(--ink-soft); }
   .empty .ti { font-size: 32px; color: var(--paper-line); }
   .empty p { font-size: 14px; margin: 10px 0 16px; }
+
+  .kanban-board { display: flex; gap: 14px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 32px; align-items: flex-start; }
+  .kanban-board::-webkit-scrollbar { height: 6px; }
+  .kanban-board::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 4px; }
+  .kanban-column { flex: 0 0 272px; background: rgba(228,220,198,0.3); border: 1px solid var(--paper-line); border-radius: 12px; padding: 10px; }
+  .kanban-col-head { padding: 4px 6px 10px; }
+  .kanban-col-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
+  .kanban-col-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--forest); }
+  .kanban-col-count { background: var(--paper-line); color: var(--ink-soft); font-size: 11px; font-weight: 500; padding: 1px 7px; border-radius: 10px; margin-left: 6px; }
+  .kanban-col-total { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-soft); }
+  .kanban-col-action { width: 100%; margin-top: 10px; }
+  .kanban-col-body {
+    display: flex; flex-direction: column; gap: 8px; min-height: 48px; max-height: 60vh;
+    overflow-y: auto; border-radius: 8px; transition: background 0.1s; padding: 2px;
+  }
+  .kanban-col-body::-webkit-scrollbar { width: 6px; }
+  .kanban-col-body::-webkit-scrollbar-thumb { background: var(--paper-line); border-radius: 4px; }
+  .kanban-col-body.drag-over { background: var(--receber-bg); outline: 2px dashed var(--receber); outline-offset: -2px; }
+  .kanban-card {
+    background: var(--card); border: 1px solid var(--paper-line); border-left: 3px solid var(--paper-line);
+    border-radius: 10px; padding: 10px 12px; cursor: grab; transition: box-shadow 0.12s;
+  }
+  .kanban-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+  .kanban-card:active { cursor: grabbing; }
+  .kanban-card.dragging { opacity: 0.4; }
+  .kanban-card.is-atrasado { border-left-color: var(--atraso); }
+  .kanban-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 6px; }
+  .kanban-card-cliente { font-weight: 500; font-size: 13.5px; color: var(--ink); line-height: 1.3; }
+  .kanban-card-actions { display: flex; gap: 0; flex: 0 0 auto; margin: -4px -6px 0 0; }
+  .kanban-card-meta { display: flex; justify-content: space-between; align-items: center; gap: 6px; font-size: 12px; margin-bottom: 8px; }
+  .kanban-card-atraso-tag { font-size: 10px; font-weight: 600; color: var(--atraso); white-space: nowrap; }
+  .kanban-card-valores { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+  .kanban-card-valor { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--ink-soft); }
+  .kanban-card-comissao { font-family: 'IBM Plex Mono', monospace; font-weight: 600; color: var(--forest); font-size: 13.5px; }
+  .kanban-card-bottom { display: flex; justify-content: space-between; align-items: center; gap: 6px; padding-top: 8px; border-top: 1px dashed var(--paper-line); }
+  .kanban-card-move { display: flex; gap: 2px; flex: 0 0 auto; }
+  .kanban-empty-col { text-align: center; font-size: 12px; color: var(--ink-soft); opacity: 0.65; padding: 16px 6px; border: 1px dashed var(--paper-line); border-radius: 8px; }
 
   .tabs-row { display: flex; gap: 4px; border-bottom: 1px solid var(--paper-line); margin-bottom: 24px; }
   .tab-btn {
@@ -305,7 +312,6 @@
     .mini-stats { grid-template-columns: 1fr 1fr; }
     .grid-form { grid-template-columns: 1fr 1fr; }
     .settings-grid { grid-template-columns: 1fr; }
-    table { font-size: 12px; }
   }
   @media (max-width: 480px) {
     .mini-stats { grid-template-columns: 1fr; }
@@ -315,23 +321,7 @@
   }
 
   @media (max-width: 640px) {
-    table thead { display: none; }
-    table, tbody, tr, td { display: block; width: 100%; }
-    tbody tr:not(.month-divider-row) {
-      border: 1px solid var(--paper-line); border-radius: 10px; margin-bottom: 10px; padding: 8px 12px; background: var(--card);
-    }
-    tbody tr:not(.month-divider-row):hover { background: var(--card); }
-    tbody tr:not(.month-divider-row) td {
-      border-bottom: 1px dashed var(--paper-line); padding: 7px 0;
-      display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: right;
-    }
-    tbody tr:not(.month-divider-row) td:last-child { border-bottom: none; }
-    tbody tr:not(.month-divider-row) td::before {
-      content: attr(data-label); font-size: 11px; color: var(--ink-soft); text-transform: uppercase;
-      letter-spacing: 0.04em; font-weight: 500; text-align: left;
-    }
-    .row-actions { justify-content: flex-end; }
-    .check-circle { width: 26px; height: 26px; }
+    .kanban-column { flex: 0 0 82vw; }
     .results-table thead { display: none; }
     .results-table, .results-table tbody, .results-table tr, .results-table td { display: block; width: 100%; }
     .results-table tr { border: 1px solid var(--paper-line); border-radius: 10px; margin-bottom: 10px; padding: 8px 12px; }
@@ -371,7 +361,6 @@ let settingsOpen = false;
 let editingId = null;
 let selectedMonthKey = null;
 let searchTerm = '';
-let statusFilter = 'todos';
 let activeTab = 'checklist';
 let resultadosView = 'chart';
 let resultadosGranularity = 'ano';
@@ -678,17 +667,25 @@ async function resetCorrecao(id) {
   v.mesCorrigido = null; render();
 }
 
-async function fecharMes(mesKey, btn) {
-  const itens = getEnriched().filter(v => v.mesKey === mesKey && v.status === 'aguardando_nota');
-  if (!itens.length) { showToast('Não há comissões aguardando pedido de nota fiscal neste mês.', 'info'); return; }
+const KANBAN_COLUMNS = [
+  { key: 'a_receber', label: 'A receber', statuses: ['previsto', 'atrasado'] },
+  { key: 'aguardando_nota', label: 'Aguardando nota', statuses: ['aguardando_nota'] },
+  { key: 'aguardando_contador', label: 'Aguardando contador', statuses: ['aguardando_contador'] },
+  { key: 'faturado', label: 'Faturado', statuses: ['faturado'] }
+];
+
+async function pedirNotaItens(itens, btn) {
+  if (!itens.length) { showToast('Não há vendas em "Aguardando nota" para pedir.', 'info'); return; }
   const total = itens.reduce((s,v) => s + v.comissao, 0);
+  const meses = [...new Set(itens.map(v => v.mesKey))];
+  const mesTxt = meses.length === 1 ? ` de ${monthLabel(meses[0])}` : '';
   const ok = await showConfirm(
-    `Pedir nota de ${monthLabel(mesKey)}: ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai abrir o WhatsApp com o valor pro seu contador e marcar essas vendas como "Aguardando contador".`,
+    `Pedir nota${mesTxt}: ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai abrir o WhatsApp com o valor pro seu contador e mover essas vendas para "Aguardando contador".`,
     { title: 'Pedir nota fiscal', confirmLabel: 'Abrir WhatsApp' }
   );
   if (!ok) return;
   if (btn) { btn.disabled = true; btn.textContent = 'Abrindo…'; }
-  const texto = `Olá! Preciso de nota fiscal referente às comissões de ${monthLabel(mesKey)}, no valor total de ${fmtBRL(total)}.`;
+  const texto = `Olá! Preciso de nota fiscal${mesTxt ? ' referente às comissões' + mesTxt : ''}, no valor total de ${fmtBRL(total)}.`;
   const numero = (config.whatsappContador || '').replace(/\D/g, '');
   const url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(texto);
   window.open(url, '_blank');
@@ -699,12 +696,13 @@ async function fecharMes(mesKey, btn) {
   showToast('Nota solicitada — vendas marcadas como "Aguardando contador".', 'success');
   render();
 }
-async function marcarMesFaturado(mesKey, btn) {
-  const itens = getEnriched().filter(v => v.mesKey === mesKey && v.status === 'aguardando_contador');
-  if (!itens.length) { showToast('Não há vendas aguardando confirmação da nota neste mês.', 'info'); return; }
+async function notaRecebidaItens(itens, btn) {
+  if (!itens.length) { showToast('Não há vendas em "Aguardando contador".', 'info'); return; }
   const total = itens.reduce((s,v) => s + v.comissao, 0);
+  const meses = [...new Set(itens.map(v => v.mesKey))];
+  const mesTxt = meses.length === 1 ? ` de ${monthLabel(meses[0])}` : '';
   const ok = await showConfirm(
-    `Confirmar que a nota fiscal de ${monthLabel(mesKey)} chegou certinha? ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai marcar essas vendas como "Faturado".`,
+    `Confirmar que a nota fiscal${mesTxt} chegou certinha? ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai marcar essas vendas como "Faturado".`,
     { title: 'Confirmar nota recebida' }
   );
   if (!ok) return;
@@ -717,78 +715,88 @@ async function marcarMesFaturado(mesKey, btn) {
   render();
 }
 
-function vendaRowHtml(v) {
+function moveCard(id, fromCol, toCol) {
+  if (toCol === fromCol) return;
+  if (toCol < 0 || toCol > 3 || Math.abs(toCol - fromCol) !== 1) {
+    showToast('Só é possível mover para a coluna anterior ou seguinte.', 'info');
+    return;
+  }
+  const boundary = Math.min(fromCol, toCol);
+  if (boundary === 0) toggleConfirmado(id);
+  else if (boundary === 1) toggleNf(id);
+  else toggleNfRecebida(id);
+}
+
+function kanbanCardHtml(v, colIndex) {
   return `
-          <tr class="${v.confirmado ? 'is-confirmado' : ''} ${v.status==='atrasado' ? 'is-atrasado' : ''}">
-            <td class="center" data-label="OK"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'✓':''}</span></td>
-            <td class="center" data-label="Nota pedida"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="Nota pedida ao contador">${v.nfSolicitada?'✓':''}</span></td>
-            <td class="center" data-label="Nota recebida"><span class="check-circle nf-check ${v.nfRecebida?'checked':''} ${!v.nfSolicitada?'disabled':''}" data-nfr="${v.id}" title="Nota recebida do contador">${v.nfRecebida?'✓':''}</span></td>
-            <td class="cliente-cell" data-label="Cliente">${v.cliente}</td>
-            <td data-label="Plano"><span class="plano-tag">${v.plano}</span></td>
-            <td class="num" data-label="Valor">${fmtBRL(v.valor)}</td>
-            <td class="num" data-label="Comissão">${fmtBRL(v.comissao)}</td>
-            <td data-label="Mês">
-              ${correctingId === v.id ? `
-                <div class="mes-editor">
-                  <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
-                  <button class="icon-btn" data-apply-correct="${v.id}" title="Salvar">✓</button>
-                  <button class="icon-btn" data-cancel-correct title="Cancelar">✕</button>
-                </div>
-              ` : `
-                <div class="mes-cell">
-                  <span>${monthShort(v.mesKey)}${v.mesCorrigido ? ' <span style="font-size:11px;color:var(--gold)" title="mês corrigido">↳</span>' : ''}</span>
-                  <button class="mes-edit-btn" data-correct="${v.id}" title="Corrigir mês">✎</button>
-                  <button class="mes-edit-btn" data-push="${v.id}" title="Empurrar p/ próximo mês">→</button>
-                  ${v.mesCorrigido ? `<button class="mes-edit-btn" data-reset="${v.id}" title="Voltar ao mês previsto">↺</button>` : ''}
-                </div>
-              `}
-            </td>
-            <td data-label="Situação"><span class="status-badge ${v.status}">${
-              v.status==='previsto' ? 'Previsto'
-              : v.status==='atrasado' ? 'Atrasado'
-              : v.status==='aguardando_nota' ? 'Aguardando nota'
-              : v.status==='aguardando_contador' ? 'Aguardando contador'
-              : 'Faturado'
-            }</span></td>
-            <td data-label="Ações">
-              <div class="row-actions">
-                <button class="icon-btn" data-edit="${v.id}" aria-label="Editar">✎</button>
-                <button class="icon-btn" data-del="${v.id}" aria-label="Excluir">🗑</button>
-              </div>
-            </td>
-          </tr>
+    <div class="kanban-card ${v.status==='atrasado' ? 'is-atrasado' : ''}" draggable="true" data-card-id="${v.id}" data-card-col="${colIndex}">
+      <div class="kanban-card-top">
+        <span class="kanban-card-cliente">${v.cliente}</span>
+        <div class="kanban-card-actions">
+          <button class="icon-btn" data-edit="${v.id}" aria-label="Editar">✎</button>
+          <button class="icon-btn" data-del="${v.id}" aria-label="Excluir">🗑</button>
+        </div>
+      </div>
+      <div class="kanban-card-meta">
+        <span class="plano-tag">${v.plano}</span>
+        ${v.status==='atrasado' ? '<span class="kanban-card-atraso-tag">⚠ Atrasado</span>' : ''}
+      </div>
+      <div class="kanban-card-valores">
+        <span class="kanban-card-valor">Contrato ${fmtBRL(v.valor)}</span>
+        <span class="kanban-card-comissao">${fmtBRL(v.comissao)}</span>
+      </div>
+      <div class="kanban-card-bottom">
+        ${correctingId === v.id ? `
+          <div class="mes-editor">
+            <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
+            <button class="icon-btn" data-apply-correct="${v.id}" title="Salvar">✓</button>
+            <button class="icon-btn" data-cancel-correct title="Cancelar">✕</button>
+          </div>
+        ` : `
+          <div class="mes-cell">
+            <span>${monthShort(v.mesKey)}${v.mesCorrigido ? ' <span style="font-size:11px;color:var(--gold)" title="mês corrigido">↳</span>' : ''}</span>
+            <button class="mes-edit-btn" data-correct="${v.id}" title="Corrigir mês">✎</button>
+            <button class="mes-edit-btn" data-push="${v.id}" title="Empurrar p/ próximo mês">→</button>
+            ${v.mesCorrigido ? `<button class="mes-edit-btn" data-reset="${v.id}" title="Voltar ao mês previsto">↺</button>` : ''}
+          </div>
+        `}
+        <div class="kanban-card-move">
+          <button class="icon-btn" data-move-back="${v.id}" data-fromcol="${colIndex}" ${colIndex===0?'disabled':''} aria-label="Voltar etapa" title="Voltar etapa">←</button>
+          <button class="icon-btn" data-move-fwd="${v.id}" data-fromcol="${colIndex}" ${colIndex===3?'disabled':''} aria-label="Avançar etapa" title="Avançar etapa">→</button>
+        </div>
+      </div>
+    </div>
   `;
 }
-function ledgerRowsHtml(filtered, curKey, enriched) {
-  let html = '';
-  let i = 0;
-  while (i < filtered.length) {
-    const mesKey = filtered[i].mesKey;
-    let total = 0, count = 0, j = i;
-    while (j < filtered.length && filtered[j].mesKey === mesKey) { total += filtered[j].comissao; count++; j++; }
-    const mesItensCompletos = enriched.filter(v => v.mesKey === mesKey);
-    const aguardandoNota = mesItensCompletos.filter(v => v.status === 'aguardando_nota');
-    const aguardandoContador = mesItensCompletos.filter(v => v.status === 'aguardando_contador');
-    const totalNota = aguardandoNota.reduce((s,v)=>s+v.comissao,0);
-    const totalContador = aguardandoContador.reduce((s,v)=>s+v.comissao,0);
-    html += `
-          <tr class="month-divider-row">
-            <td colspan="10">
-              <div class="month-divider">
-                <span class="month-divider-label">${monthLabel(mesKey)}${mesKey===curKey ? '<span class="tag-atual">mês atual</span>' : ''}</span>
-                <div class="month-divider-right">
-                  ${aguardandoNota.length ? `<button class="btn btn-primary btn-sm" data-pedir-nota="${mesKey}">💬 Pedir nota (${fmtBRL(totalNota)})</button>` : ''}
-                  ${aguardandoContador.length ? `<button class="btn btn-primary btn-sm" data-nota-recebida="${mesKey}">✅ Nota recebida (${fmtBRL(totalContador)})</button>` : ''}
-                  <span class="month-divider-total">${fmtBRL(total)} · ${count} venda${count===1?'':'s'}</span>
-                </div>
-              </div>
-            </td>
-          </tr>
-    `;
-    for (let k = i; k < j; k++) html += vendaRowHtml(filtered[k]);
-    i = j;
-  }
-  return html;
+
+function kanbanBoardHtml(filtered) {
+  return `<div class="kanban-board">
+    ${KANBAN_COLUMNS.map((col, idx) => {
+      const items = filtered.filter(v => col.statuses.includes(v.status))
+        .sort((a,b) => (a.mesKey||'').localeCompare(b.mesKey||'') || a.cliente.localeCompare(b.cliente));
+      const total = items.reduce((s,v)=>s+v.comissao,0);
+      let bulkBtn = '';
+      if (col.key === 'aguardando_nota' && items.length) {
+        bulkBtn = `<button class="btn btn-primary btn-sm kanban-col-action" data-pedir-nota-col="${idx}">💬 Pedir nota de todos (${fmtBRL(total)})</button>`;
+      } else if (col.key === 'aguardando_contador' && items.length) {
+        bulkBtn = `<button class="btn btn-primary btn-sm kanban-col-action" data-nota-recebida-col="${idx}">✅ Nota recebida de todos (${fmtBRL(total)})</button>`;
+      }
+      return `
+        <div class="kanban-column">
+          <div class="kanban-col-head">
+            <div class="kanban-col-title-row">
+              <span class="kanban-col-title">${col.label}<span class="kanban-col-count">${items.length}</span></span>
+            </div>
+            <span class="kanban-col-total">${fmtBRL(total)}</span>
+            ${bulkBtn}
+          </div>
+          <div class="kanban-col-body" data-dropzone="${idx}">
+            ${items.length ? items.map(v => kanbanCardHtml(v, idx)).join('') : '<div class="kanban-empty-col">Nada aqui</div>'}
+          </div>
+        </div>
+      `;
+    }).join('')}
+  </div>`;
 }
 
 const STATUS_ORDER = ['previsto', 'atrasado', 'aguardando_nota', 'aguardando_contador', 'faturado'];
@@ -986,12 +994,8 @@ function render() {
   });
 
   let filtered = enriched;
-  if (statusFilter === 'todos') filtered = filtered.filter(v => v.status !== 'faturado');
-  else if (statusFilter === 'pendentes') filtered = filtered.filter(v => v.status === 'previsto' || v.status === 'atrasado');
-  else filtered = filtered.filter(v => v.status === statusFilter);
   if (selectedMonthKey) filtered = filtered.filter(v => v.mesKey === selectedMonthKey);
   if (searchTerm) { const t = searchTerm.toLowerCase(); filtered = filtered.filter(v => v.cliente.toLowerCase().includes(t) || v.plano.toLowerCase().includes(t)); }
-  filtered = filtered.slice().sort((a,b) => (a.mesKey||'').localeCompare(b.mesKey||'') || a.cliente.localeCompare(b.cliente));
 
   app.innerHTML = `
     <div class="masthead">
@@ -1116,40 +1120,15 @@ function render() {
       <h2>${selectedMonthKey ? monthLabel(selectedMonthKey) : 'Checklist de comissões'}</h2>
       <div class="head-actions">
         ${selectedMonthKey ? `<button class="btn btn-ghost btn-sm" id="btn-clear-filter">Limpar filtro</button>` : ''}
-        <button class="toggle-pill ${statusFilter==='todos' ? 'active' : ''}" data-status-filter="todos">Todos</button>
-        <button class="toggle-pill ${statusFilter==='pendentes' ? 'active' : ''}" data-status-filter="pendentes">Só pendentes</button>
-        <button class="toggle-pill ${statusFilter==='aguardando_nota' ? 'active' : ''}" data-status-filter="aguardando_nota">Aguardando nota</button>
-        <button class="toggle-pill ${statusFilter==='aguardando_contador' ? 'active' : ''}" data-status-filter="aguardando_contador">Aguardando contador</button>
-        <button class="toggle-pill ${statusFilter==='faturado' ? 'active' : ''}" data-status-filter="faturado">Faturados</button>
         <div class="search-box"><input type="text" id="search-input" placeholder="Buscar cliente ou plano" value="${searchTerm}"></div>
       </div>
     </div>
 
-    ${filtered.length ? `
-    <table>
-      <thead>
-        <tr>
-          <th class="center">OK</th>
-          <th class="center">Nota pedida</th>
-          <th class="center">Nota recebida</th>
-          <th>Cliente</th>
-          <th>Plano</th>
-          <th class="num">Valor</th>
-          <th class="num">Comissão</th>
-          <th>Mês</th>
-          <th>Situação</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        ${ledgerRowsHtml(filtered, focusKey, enriched)}
-      </tbody>
-    </table>
-    ` : `
+    ${filtered.length ? kanbanBoardHtml(filtered) : `
     <div class="empty">
       <span style="font-size:32px">🧾</span>
-      <p>${searchTerm || selectedMonthKey || statusFilter !== 'todos' ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
-      ${!searchTerm && !selectedMonthKey && statusFilter === 'todos' ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
+      <p>${searchTerm || selectedMonthKey ? 'Nenhuma venda encontrada com esse filtro.' : 'Nenhuma venda registrada ainda. Comece adicionando a primeira.'}</p>
+      ${!searchTerm && !selectedMonthKey ? '<button class="btn btn-primary btn-sm" id="btn-nova-empty">Registrar venda</button>' : ''}
     </div>
     `}
     `}
@@ -1167,7 +1146,6 @@ function render() {
     document.getElementById(id)?.addEventListener('change', updatePreview);
   });
   document.getElementById('btn-clear-filter')?.addEventListener('click', () => { selectedMonthKey = null; render(); });
-  document.querySelectorAll('[data-status-filter]').forEach(el => el.addEventListener('click', () => { statusFilter = el.getAttribute('data-status-filter'); render(); }));
   document.getElementById('btn-toggle-past')?.addEventListener('click', () => { showPastMonths = !showPastMonths; render(); });
   document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => { activeTab = el.getAttribute('data-tab'); render(); }));
   document.querySelectorAll('[data-results-view]').forEach(el => el.addEventListener('click', () => { resultadosView = el.getAttribute('data-results-view'); render(); }));
@@ -1188,17 +1166,48 @@ function render() {
     });
     el.addEventListener('mouseleave', () => { if (chartTooltip) chartTooltip.style.opacity = '0'; });
   });
-  document.querySelectorAll('[data-pedir-nota]').forEach(el => el.addEventListener('click', () => fecharMes(el.getAttribute('data-pedir-nota'), el)));
-  document.querySelectorAll('[data-nota-recebida]').forEach(el => el.addEventListener('click', () => marcarMesFaturado(el.getAttribute('data-nota-recebida'), el)));
+  document.querySelectorAll('[data-pedir-nota-col]').forEach(el => el.addEventListener('click', () => {
+    const idx = parseInt(el.getAttribute('data-pedir-nota-col'));
+    pedirNotaItens(filtered.filter(v => KANBAN_COLUMNS[idx].statuses.includes(v.status)), el);
+  }));
+  document.querySelectorAll('[data-nota-recebida-col]').forEach(el => el.addEventListener('click', () => {
+    const idx = parseInt(el.getAttribute('data-nota-recebida-col'));
+    notaRecebidaItens(filtered.filter(v => KANBAN_COLUMNS[idx].statuses.includes(v.status)), el);
+  }));
+  document.querySelectorAll('[data-move-fwd]').forEach(el => el.addEventListener('click', () => {
+    const fromCol = parseInt(el.getAttribute('data-fromcol'));
+    moveCard(el.getAttribute('data-move-fwd'), fromCol, fromCol + 1);
+  }));
+  document.querySelectorAll('[data-move-back]').forEach(el => el.addEventListener('click', () => {
+    const fromCol = parseInt(el.getAttribute('data-fromcol'));
+    moveCard(el.getAttribute('data-move-back'), fromCol, fromCol - 1);
+  }));
+  document.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('dragstart', (e) => {
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', JSON.stringify({ id: card.getAttribute('data-card-id'), fromCol: parseInt(card.getAttribute('data-card-col')) }));
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+  });
+  document.querySelectorAll('.kanban-col-body').forEach(zone => {
+    zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      try {
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        moveCard(data.id, data.fromCol, parseInt(zone.getAttribute('data-dropzone')));
+      } catch (err) {}
+    });
+  });
   document.getElementById('search-input')?.addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
   document.querySelectorAll('.month-card').forEach(el => {
     el.addEventListener('click', () => { const k = el.getAttribute('data-month'); selectedMonthKey = selectedMonthKey === k ? null : k; render(); });
   });
   document.querySelectorAll('[data-edit]').forEach(el => el.addEventListener('click', () => { const v = vendas.find(x => x.id === el.getAttribute('data-edit')); if (v) openPanel(v); }));
   document.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => deleteVenda(el.getAttribute('data-del'))));
-  document.querySelectorAll('[data-confirm]').forEach(el => el.addEventListener('click', () => toggleConfirmado(el.getAttribute('data-confirm'))));
-  document.querySelectorAll('[data-nf]').forEach(el => el.addEventListener('click', () => toggleNf(el.getAttribute('data-nf'))));
-  document.querySelectorAll('[data-nfr]').forEach(el => el.addEventListener('click', () => toggleNfRecebida(el.getAttribute('data-nfr'))));
   document.querySelectorAll('[data-correct]').forEach(el => el.addEventListener('click', () => startCorrect(el.getAttribute('data-correct'))));
   document.querySelectorAll('[data-push]').forEach(el => el.addEventListener('click', () => pushNextMonth(el.getAttribute('data-push'))));
   document.querySelectorAll('[data-reset]').forEach(el => el.addEventListener('click', () => resetCorrecao(el.getAttribute('data-reset'))));
