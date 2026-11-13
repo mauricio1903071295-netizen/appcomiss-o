@@ -36,7 +36,7 @@
     font-family: 'IBM Plex Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-  #app { max-width: 1040px; margin: 0 auto; padding: 32px 24px 80px; }
+  #app { max-width: 1600px; margin: 0 auto; padding: 32px 40px 80px; }
 
   .masthead {
     display: flex;
@@ -844,6 +844,11 @@ const STATUS_COLORS = {
   aguardando_contador: '#2E5AA6',
   faturado: '#1E7A49'
 };
+const RENDA_FIXA_KEY = 'renda_fixa';
+const RENDA_FIXA_COLOR = '#1C7C7A';
+const CHART_ORDER = [...STATUS_ORDER, RENDA_FIXA_KEY];
+function chartLabels() { return { ...STATUS_LABELS, [RENDA_FIXA_KEY]: config.rendaFixaNome || 'Receita fixa' }; }
+function chartColors() { return { ...STATUS_COLORS, [RENDA_FIXA_KEY]: RENDA_FIXA_COLOR }; }
 function fmtBRLInt(v) { return 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR'); }
 
 function getEnriched() {
@@ -939,11 +944,13 @@ function rendaFixaCardHtml() {
   `;
 }
 
-function summarizeStatus(items) {
+function rendaFixaValorDoMes(mesKey) { return rendaFixaDoMes(mesKey)?.valor ?? (config.rendaFixaValor || 0); }
+function summarizeStatus(items, rendaFixaValor) {
   const byStatus = {};
   STATUS_ORDER.forEach(s => { byStatus[s] = { total: 0, count: 0 }; });
   items.forEach(v => { byStatus[v.status].total += v.comissao; byStatus[v.status].count += 1; });
-  const total = STATUS_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
+  byStatus[RENDA_FIXA_KEY] = { total: rendaFixaValor || 0, count: rendaFixaValor ? 1 : 0 };
+  const total = CHART_ORDER.reduce((s, st) => s + byStatus[st].total, 0);
   return { byStatus, total };
 }
 function buildChartData(enriched, keys, granularity, ano) {
@@ -951,25 +958,35 @@ function buildChartData(enriched, keys, granularity, ano) {
     const monthsOfYear = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, '0')}`);
     return monthsOfYear.map(k => {
       const items = enriched.filter(v => v.mesKey === k);
-      return { key: k, label: monthLabel(k), shortLabel: monthShort(k).split('/')[0], ...summarizeStatus(items) };
+      return { key: k, label: monthLabel(k), shortLabel: monthShort(k).split('/')[0], ...summarizeStatus(items, rendaFixaValorDoMes(k)) };
+    });
+  }
+  if (granularity === 'historico') {
+    const anos = [...new Set(keys.map(k => k.split('-')[0]))].sort();
+    return anos.map(ano => {
+      const items = enriched.filter(v => v.mesKey && v.mesKey.startsWith(ano));
+      const rendaFixaAno = Array.from({ length: 12 }, (_, i) => `${ano}-${String(i + 1).padStart(2, '0')}`)
+        .reduce((s, k) => s + rendaFixaValorDoMes(k), 0);
+      return { key: ano, label: ano, shortLabel: ano, ...summarizeStatus(items, rendaFixaAno) };
     });
   }
   return keys.map(k => {
     const items = enriched.filter(v => v.mesKey === k);
-    return { key: k, label: monthLabel(k), shortLabel: monthShort(k), ...summarizeStatus(items) };
+    return { key: k, label: monthLabel(k), shortLabel: monthShort(k), ...summarizeStatus(items, rendaFixaValorDoMes(k)) };
   });
 }
 
 function resultadosLegendHtml() {
-  return `<div class="chart-legend">${STATUS_ORDER.map(s => `
-    <span class="legend-chip"><span class="legend-dot" style="background:${STATUS_COLORS[s]}"></span>${STATUS_LABELS[s]}</span>
+  const labels = chartLabels(), colors = chartColors();
+  return `<div class="chart-legend">${CHART_ORDER.map(s => `
+    <span class="legend-chip"><span class="legend-dot" style="background:${colors[s]}"></span>${labels[s]}</span>
   `).join('')}</div>`;
 }
 
 function resultadosChartHtml(chartData) {
   if (!chartData.length) return '';
   const maxTotal = Math.max(1, ...chartData.map(d => d.total));
-  const plotH = 200, barW = 34, gap = 20, padTop = 26, padBottom = 30;
+  const plotH = 200, barW = chartData.length <= 8 ? 60 : 34, gap = 20, padTop = 38, padBottom = 30;
   const svgW = chartData.length * (barW + gap) + gap;
   const svgH = padTop + plotH + padBottom;
   const gridN = 4;
@@ -977,20 +994,21 @@ function resultadosChartHtml(chartData) {
   const grid = Array.from({ length: gridN + 1 }).map((_, i) => {
     const y = padTop + plotH - (i / gridN) * plotH;
     const val = (maxTotal / gridN) * i;
-    return `<line x1="0" y1="${y.toFixed(1)}" x2="${svgW}" y2="${y.toFixed(1)}" class="chart-grid"></line>
-            <text x="4" y="${(y - 4).toFixed(1)}" class="chart-grid-label">${fmtBRLInt(val)}</text>`;
+    const label = i === gridN ? '' : `<text x="4" y="${(y - 4).toFixed(1)}" class="chart-grid-label">${fmtBRLInt(val)}</text>`;
+    return `<line x1="0" y1="${y.toFixed(1)}" x2="${svgW}" y2="${y.toFixed(1)}" class="chart-grid"></line>${label}`;
   }).join('');
 
+  const colors = chartColors();
   const bars = chartData.map((d, i) => {
     const x = gap + i * (barW + gap);
     let yCursor = padTop + plotH;
-    const segs = STATUS_ORDER.map(status => {
+    const segs = CHART_ORDER.map(status => {
       const val = d.byStatus[status].total;
       if (val <= 0) return '';
       const h = Math.max((val / maxTotal) * plotH - 1, 0);
       const y = yCursor - h;
       yCursor = y - 2;
-      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="2" fill="${STATUS_COLORS[status]}"
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW}" height="${h.toFixed(1)}" rx="2" fill="${colors[status]}"
                 class="chart-seg" data-status="${status}" data-label="${d.label}" data-value="${val.toFixed(2)}" data-count="${d.byStatus[status].count}"></rect>`;
     }).join('');
     const labelY = Math.max(padTop - 8, yCursor - 4);
@@ -1008,20 +1026,22 @@ function resultadosChartHtml(chartData) {
 }
 
 function resultadosTableHtml(chartData, granularity) {
+  const labels = chartLabels();
+  const colLabel = granularity === 'historico' ? 'Ano' : 'Mês';
   return `
     <table class="results-table">
       <thead>
         <tr>
-          <th>Mês</th>
-          ${STATUS_ORDER.map(s => `<th class="num">${STATUS_LABELS[s]}</th>`).join('')}
+          <th>${colLabel}</th>
+          ${CHART_ORDER.map(s => `<th class="num">${labels[s]}</th>`).join('')}
           <th class="num">Total</th>
         </tr>
       </thead>
       <tbody>
         ${chartData.map(d => `
           <tr>
-            <td data-label="Mês">${d.label}</td>
-            ${STATUS_ORDER.map(s => `<td class="num" data-label="${STATUS_LABELS[s]}">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
+            <td data-label="${colLabel}">${d.label}</td>
+            ${CHART_ORDER.map(s => `<td class="num" data-label="${labels[s]}">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
             <td class="num" data-label="Total" style="font-weight:600">${fmtBRL(d.total)}</td>
           </tr>
         `).join('')}
@@ -1034,7 +1054,7 @@ function resultadosSectionHtml(enriched, keys) {
   const chartData = buildChartData(enriched, keys, resultadosGranularity, resultadosAno);
   return `
     <div class="results-head">
-      <h2>${resultadosGranularity === 'ano' ? `Resultados de ${resultadosAno}` : 'Resultados mês a mês'}</h2>
+      <h2>${resultadosGranularity === 'ano' ? `Resultados de ${resultadosAno}` : 'Histórico completo (por ano)'}</h2>
       <div class="head-actions">
         ${resultadosGranularity === 'ano' ? `
           <div class="year-nav">
@@ -1044,7 +1064,7 @@ function resultadosSectionHtml(enriched, keys) {
           </div>
         ` : ''}
         <button class="toggle-pill ${resultadosGranularity === 'ano' ? 'active' : ''}" data-granularity="ano">Por ano</button>
-        <button class="toggle-pill ${resultadosGranularity === 'mes' ? 'active' : ''}" data-granularity="mes">Histórico completo</button>
+        <button class="toggle-pill ${resultadosGranularity === 'historico' ? 'active' : ''}" data-granularity="historico">Histórico completo</button>
         <button class="toggle-pill ${resultadosView === 'chart' ? 'active' : ''}" data-results-view="chart">Gráfico</button>
         <button class="toggle-pill ${resultadosView === 'tabela' ? 'active' : ''}" data-results-view="tabela">Tabela</button>
       </div>
@@ -1299,7 +1319,8 @@ function render() {
       const value = parseFloat(el.getAttribute('data-value'));
       const count = el.getAttribute('data-count');
       const label = el.getAttribute('data-label');
-      chartTooltip.innerHTML = `<b>${STATUS_LABELS[status]}</b><br>${label}<br>${fmtBRL(value)} · ${count} venda${count==1?'':'s'}`;
+      const isRendaFixa = status === RENDA_FIXA_KEY;
+      chartTooltip.innerHTML = `<b>${chartLabels()[status]}</b><br>${label}<br>${fmtBRL(value)}${isRendaFixa ? '' : ' · ' + count + ' venda' + (count==1?'':'s')}`;
       chartTooltip.style.left = (e.pageX + 12) + 'px';
       chartTooltip.style.top = (e.pageY + 12) + 'px';
       chartTooltip.style.opacity = '1';
