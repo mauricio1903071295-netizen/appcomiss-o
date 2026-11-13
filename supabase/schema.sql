@@ -33,7 +33,10 @@ create table if not exists public.configuracoes (
   user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
   regra text not null default 'mes_seguinte',
   dias_pagamento int not null default 60,
-  whatsapp_contador text
+  whatsapp_contador text,
+  renda_fixa_valor numeric,
+  renda_fixa_dia int not null default 5,
+  renda_fixa_nome text not null default 'Receita fixa'
 );
 
 alter table public.configuracoes enable row level security;
@@ -44,3 +47,27 @@ create policy "config_insert_own" on public.configuracoes
   for insert with check (auth.uid() = user_id);
 create policy "config_update_own" on public.configuracoes
   for update using (auth.uid() = user_id);
+
+create table if not exists public.rendas_fixas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  mes text not null,
+  valor numeric not null,
+  confirmado boolean not null default false,
+  nf_solicitada boolean not null default false,
+  nf_recebida boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (user_id, mes)
+);
+
+alter table public.rendas_fixas enable row level security;
+
+create policy "rendas_fixas_select_own" on public.rendas_fixas
+  for select using (auth.uid() = user_id);
+create policy "rendas_fixas_insert_own" on public.rendas_fixas
+  for insert with check (auth.uid() = user_id);
+create policy "rendas_fixas_update_own" on public.rendas_fixas
+  for update using (auth.uid() = user_id);
+create policy "rendas_fixas_delete_own" on public.rendas_fixas
+  for delete using (auth.uid() = user_id);
+
