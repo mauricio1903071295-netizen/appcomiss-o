@@ -94,6 +94,12 @@
   .hero-side.warn { border-color: var(--gold-light); }
   .hero-side .caption2 { font-size: 12px; color: var(--ink-soft); }
 
+  .mini-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+  .mini-stat { background: var(--card); border: 1px solid var(--paper-line); border-radius: 12px; padding: 14px 16px; transition: border-color 0.15s; }
+  .mini-stat:hover { border-color: var(--gold-light); }
+  .mini-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); font-weight: 500; margin-bottom: 6px; }
+  .mini-stat-value { font-family: 'IBM Plex Mono', monospace; font-size: 18px; font-weight: 500; color: var(--forest); }
+
   .strip-label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--ink-soft); margin-bottom: 10px; font-weight: 500; }
   .strip { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 32px; }
   .strip::-webkit-scrollbar { height: 6px; }
@@ -250,20 +256,103 @@
   .auth-actions { display: flex; gap: 10px; }
   .loading-state { text-align: center; padding: 80px 20px; color: var(--ink-soft); font-size: 14px; }
 
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--forest); outline-offset: 2px;
+  }
+  .btn:disabled, .btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+  .btn:disabled:hover, .btn[disabled]:hover { background: transparent; color: var(--forest); }
+  .btn-primary:disabled:hover, .btn-primary[disabled]:hover { background: var(--forest); color: #fff; }
+
+  .panel.open, .settings-panel.open { animation: panel-in 0.16s ease-out; }
+  @keyframes panel-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+
+  .toast-container {
+    position: fixed; bottom: 20px; right: 20px; z-index: 1000;
+    display: flex; flex-direction: column; gap: 10px; max-width: 360px;
+  }
+  .toast {
+    background: var(--card); border: 1px solid var(--paper-line); border-left: 4px solid var(--ink-soft);
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; color: var(--ink); line-height: 1.45;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.14); display: flex; align-items: flex-start; gap: 10px;
+    animation: toast-in 0.22s ease-out;
+  }
+  .toast.success { border-left-color: var(--receber); }
+  .toast.error { border-left-color: var(--atraso); }
+  .toast.info { border-left-color: var(--nf); }
+  .toast .toast-icon { font-size: 14px; }
+  .toast .toast-msg { flex: 1; }
+  .toast .toast-close { background: none; border: none; color: var(--ink-soft); cursor: pointer; font-size: 14px; padding: 0; line-height: 1; }
+  .toast.leaving { animation: toast-out 0.18s ease-in forwards; }
+  @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes toast-out { from { opacity: 1; transform: translateX(0); } to { opacity: 0; transform: translateX(24px); } }
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(35,40,31,0.45); z-index: 999;
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+    animation: modal-fade-in 0.12s ease-out;
+  }
+  @keyframes modal-fade-in { from { opacity: 0; } to { opacity: 1; } }
+  .modal-box {
+    background: var(--card); border-radius: 14px; padding: 24px; max-width: 400px; width: 100%;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.28); animation: modal-pop-in 0.16s ease-out;
+  }
+  @keyframes modal-pop-in { from { opacity: 0; transform: scale(0.97) translateY(4px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+  .modal-box h3 { font-family: 'Fraunces', serif; font-size: 17px; margin: 0 0 10px; color: var(--forest); }
+  .modal-box p { font-size: 14px; color: var(--ink-soft); margin: 0 0 20px; line-height: 1.55; white-space: pre-line; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .btn-danger { border-color: var(--atraso); color: var(--atraso); }
+  .btn-danger:hover { background: var(--atraso); color: #fff; }
+
   @media (max-width: 760px) {
     .hero { grid-template-columns: 1fr; }
+    .mini-stats { grid-template-columns: 1fr 1fr; }
     .grid-form { grid-template-columns: 1fr 1fr; }
     .settings-grid { grid-template-columns: 1fr; }
     table { font-size: 12px; }
   }
   @media (max-width: 480px) {
+    .mini-stats { grid-template-columns: 1fr; }
     .grid-form { grid-template-columns: 1fr; }
     .masthead { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .toast-container { left: 16px; right: 16px; bottom: 16px; max-width: none; }
+  }
+
+  @media (max-width: 640px) {
+    table thead { display: none; }
+    table, tbody, tr, td { display: block; width: 100%; }
+    tbody tr:not(.month-divider-row) {
+      border: 1px solid var(--paper-line); border-radius: 10px; margin-bottom: 10px; padding: 8px 12px; background: var(--card);
+    }
+    tbody tr:not(.month-divider-row):hover { background: var(--card); }
+    tbody tr:not(.month-divider-row) td {
+      border-bottom: 1px dashed var(--paper-line); padding: 7px 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; text-align: right;
+    }
+    tbody tr:not(.month-divider-row) td:last-child { border-bottom: none; }
+    tbody tr:not(.month-divider-row) td::before {
+      content: attr(data-label); font-size: 11px; color: var(--ink-soft); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 500; text-align: left;
+    }
+    .row-actions { justify-content: flex-end; }
+    .check-circle { width: 26px; height: 26px; }
+    .results-table thead { display: none; }
+    .results-table, .results-table tbody, .results-table tr, .results-table td { display: block; width: 100%; }
+    .results-table tr { border: 1px solid var(--paper-line); border-radius: 10px; margin-bottom: 10px; padding: 8px 12px; }
+    .results-table td {
+      border-bottom: 1px dashed var(--paper-line); padding: 7px 0;
+      display: flex; justify-content: space-between; text-align: right;
+    }
+    .results-table td:last-child { border-bottom: none; }
+    .results-table td::before {
+      content: attr(data-label); font-size: 11px; color: var(--ink-soft); text-transform: uppercase;
+      letter-spacing: 0.04em; font-weight: 500; text-align: left;
+    }
   }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div class="toast-container" id="toast-container"></div>
 <script>
 const SUPABASE_URL = 'https://wkzsethovmhdujjgttmr.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_EPGcV_jbN9JEWNFn035oyg_g36takLn';
@@ -292,6 +381,51 @@ let resultadosGranularity = 'ano';
 let resultadosAno = new Date().getFullYear();
 let showPastMonths = false;
 let correctingId = null;
+
+function showToast(message, type) {
+  type = type || 'info';
+  const container = document.getElementById('toast-container');
+  if (!container) { console.log(message); return; }
+  const icon = type === 'success' ? '✓' : type === 'error' ? '⚠' : 'ℹ';
+  const el = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.innerHTML = `<span class="toast-icon">${icon}</span><span class="toast-msg"></span><button class="toast-close" aria-label="Fechar">✕</button>`;
+  el.querySelector('.toast-msg').textContent = message;
+  const remove = () => {
+    el.classList.add('leaving');
+    setTimeout(() => el.remove(), 200);
+  };
+  el.querySelector('.toast-close').addEventListener('click', remove);
+  container.appendChild(el);
+  setTimeout(remove, type === 'error' ? 6000 : 4000);
+}
+
+function showConfirm(message, opts) {
+  opts = opts || {};
+  return new Promise((resolve) => {
+    const backdrop = document.createElement('div');
+    backdrop.className = 'modal-backdrop';
+    backdrop.innerHTML = `
+      <div class="modal-box" role="dialog" aria-modal="true">
+        <h3>${opts.title || 'Confirmar'}</h3>
+        <p></p>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="modal-cancel">${opts.cancelLabel || 'Cancelar'}</button>
+          <button class="btn ${opts.danger ? 'btn-danger' : 'btn-primary'}" id="modal-confirm">${opts.confirmLabel || 'Confirmar'}</button>
+        </div>
+      </div>
+    `;
+    backdrop.querySelector('p').textContent = message;
+    function close(result) { backdrop.remove(); document.removeEventListener('keydown', onKey); resolve(result); }
+    function onKey(e) { if (e.key === 'Escape') close(false); }
+    backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(false); });
+    backdrop.querySelector('#modal-cancel').addEventListener('click', () => close(false));
+    backdrop.querySelector('#modal-confirm').addEventListener('click', () => close(true));
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(backdrop);
+    backdrop.querySelector('#modal-confirm').focus();
+  });
+}
 
 function fmtBRL(v) { return (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
 function parseDate(s) { if (!s) return null; const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); }
@@ -367,7 +501,7 @@ async function loadConfig() {
 }
 async function saveConfig() {
   const { error } = await supa.from('configuracoes').upsert({ user_id: session.user.id, regra: config.regra, dias_pagamento: config.diasPagamento, whatsapp_contador: config.whatsappContador });
-  if (error) { alert('Não foi possível salvar as configurações: ' + error.message); return false; }
+  if (error) { showToast('Não foi possível salvar as configurações: ' + error.message, 'error'); return false; }
   return true;
 }
 
@@ -465,28 +599,35 @@ function updatePreview() {
 }
 async function submitForm() {
   const f = readForm();
-  if (!f.cliente || !f.valor || !f.primeiroVencimento || !f.dataVenda) { alert('Preencha data da venda, cliente, valor do contrato e primeiro vencimento.'); return; }
+  if (!f.cliente || !f.valor || !f.primeiroVencimento || !f.dataVenda) { showToast('Preencha data da venda, cliente, valor do contrato e primeiro vencimento.', 'error'); return; }
   const comissao = calcComissao(f.valor);
+  const btn = document.getElementById('btn-salvar');
+  if (btn) { btn.disabled = true; btn.textContent = 'Salvando…'; }
   if (editingId) {
     const idx = vendas.findIndex(v => v.id === editingId);
     const atual = vendas[idx];
     const row = toRow({ ...f, comissao, confirmado: atual.confirmado, nfSolicitada: atual.nfSolicitada, nfRecebida: atual.nfRecebida, mesCorrigido: atual.mesCorrigido });
     const { data, error } = await supa.from('vendas').update(row).eq('id', editingId).select().maybeSingle();
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Salvar alterações'; } return; }
     if (idx >= 0) vendas[idx] = fromRow(data);
+    showToast('Venda atualizada.', 'success');
   } else {
     const row = toRow({ ...f, comissao, confirmado: false, nfSolicitada: false, nfRecebida: false, mesCorrigido: null });
     const { data, error } = await supa.from('vendas').insert(row).select().maybeSingle();
-    if (error) { alert('Erro ao salvar: ' + error.message); return; }
+    if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); if (btn) { btn.disabled = false; btn.textContent = 'Registrar venda'; } return; }
     vendas.push(fromRow(data));
+    showToast('Venda registrada.', 'success');
   }
   closePanel();
 }
 async function deleteVenda(id) {
-  if (!confirm('Remover esta venda do livro de comissões?')) return;
+  const ok = await showConfirm('Remover esta venda do livro de comissões? Essa ação não pode ser desfeita.', { title: 'Remover venda', confirmLabel: 'Remover', danger: true });
+  if (!ok) return;
   const { error } = await supa.from('vendas').delete().eq('id', id);
-  if (error) { alert('Erro ao excluir: ' + error.message); return; }
-  vendas = vendas.filter(v => v.id !== id); render();
+  if (error) { showToast('Erro ao excluir: ' + error.message, 'error'); return; }
+  vendas = vendas.filter(v => v.id !== id);
+  showToast('Venda removida.', 'success');
+  render();
 }
 function toggleSettings() { settingsOpen = !settingsOpen; render(); }
 
@@ -496,7 +637,7 @@ async function toggleConfirmado(id) {
   const nfSolicitada = confirmado ? v.nfSolicitada : false;
   const nfRecebida = confirmado ? v.nfRecebida : false;
   const { error } = await supa.from('vendas').update({ confirmado, nf_solicitada: nfSolicitada, nf_recebida: nfRecebida }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.confirmado = confirmado; v.nfSolicitada = nfSolicitada; v.nfRecebida = nfRecebida; render();
 }
 async function toggleNf(id) {
@@ -504,14 +645,14 @@ async function toggleNf(id) {
   const nfSolicitada = !v.nfSolicitada;
   const nfRecebida = nfSolicitada ? v.nfRecebida : false;
   const { error } = await supa.from('vendas').update({ nf_solicitada: nfSolicitada, nf_recebida: nfRecebida }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.nfSolicitada = nfSolicitada; v.nfRecebida = nfRecebida; render();
 }
 async function toggleNfRecebida(id) {
   const v = vendas.find(x => x.id === id); if (!v || !v.nfSolicitada) return;
   const nfRecebida = !v.nfRecebida;
   const { error } = await supa.from('vendas').update({ nf_recebida: nfRecebida }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.nfRecebida = nfRecebida; render();
 }
 function startCorrect(id) { correctingId = id; render(); }
@@ -521,7 +662,7 @@ async function applyCorrect(id) {
   const v = vendas.find(x => x.id === id); if (!v || !input) return;
   const mesCorrigido = input.value;
   const { error } = await supa.from('vendas').update({ mes_corrigido: mesCorrigido, confirmado: false, nf_solicitada: false }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.mesCorrigido = mesCorrigido; v.confirmado = false; v.nfSolicitada = false;
   correctingId = null; render();
 }
@@ -529,57 +670,67 @@ async function pushNextMonth(id) {
   const v = vendas.find(x => x.id === id); if (!v) return;
   const mesCorrigido = monthKeyAdd(mesEfetivo(v), 1);
   const { error } = await supa.from('vendas').update({ mes_corrigido: mesCorrigido, confirmado: false, nf_solicitada: false }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.mesCorrigido = mesCorrigido; v.confirmado = false; v.nfSolicitada = false;
   render();
 }
 async function resetCorrecao(id) {
   const v = vendas.find(x => x.id === id); if (!v) return;
   const { error } = await supa.from('vendas').update({ mes_corrigido: null }).eq('id', id);
-  if (error) { alert('Erro: ' + error.message); return; }
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
   v.mesCorrigido = null; render();
 }
 
-async function fecharMes(mesKey) {
+async function fecharMes(mesKey, btn) {
   const itens = getEnriched().filter(v => v.mesKey === mesKey && v.status === 'aguardando_nota');
-  if (!itens.length) { alert('Não há comissões aguardando pedido de nota fiscal neste mês.'); return; }
+  if (!itens.length) { showToast('Não há comissões aguardando pedido de nota fiscal neste mês.', 'info'); return; }
   const total = itens.reduce((s,v) => s + v.comissao, 0);
-  const ok = confirm(`Pedir nota de ${monthLabel(mesKey)}: ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai abrir o WhatsApp com o valor pro seu contador e marcar essas vendas como "Aguardando contador". Continuar?`);
+  const ok = await showConfirm(
+    `Pedir nota de ${monthLabel(mesKey)}: ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai abrir o WhatsApp com o valor pro seu contador e marcar essas vendas como "Aguardando contador".`,
+    { title: 'Pedir nota fiscal', confirmLabel: 'Abrir WhatsApp' }
+  );
   if (!ok) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Abrindo…'; }
   const texto = `Olá! Preciso de nota fiscal referente às comissões de ${monthLabel(mesKey)}, no valor total de ${fmtBRL(total)}.`;
   const numero = (config.whatsappContador || '').replace(/\D/g, '');
   const url = 'https://wa.me/' + numero + '?text=' + encodeURIComponent(texto);
   window.open(url, '_blank');
   const ids = itens.map(v => v.id);
   const { error } = await supa.from('vendas').update({ nf_solicitada: true }).in('id', ids);
-  if (error) { alert('Abri o WhatsApp, mas houve um erro ao marcar as vendas como "aguardando contador": ' + error.message); return; }
+  if (error) { showToast('Abri o WhatsApp, mas houve um erro ao marcar as vendas como "aguardando contador": ' + error.message, 'error'); return; }
   ids.forEach(id => { const v = vendas.find(x => x.id === id); if (v) v.nfSolicitada = true; });
+  showToast('Nota solicitada — vendas marcadas como "Aguardando contador".', 'success');
   render();
 }
-async function marcarMesFaturado(mesKey) {
+async function marcarMesFaturado(mesKey, btn) {
   const itens = getEnriched().filter(v => v.mesKey === mesKey && v.status === 'aguardando_contador');
-  if (!itens.length) { alert('Não há vendas aguardando confirmação da nota neste mês.'); return; }
+  if (!itens.length) { showToast('Não há vendas aguardando confirmação da nota neste mês.', 'info'); return; }
   const total = itens.reduce((s,v) => s + v.comissao, 0);
-  const ok = confirm(`Confirmar que a nota fiscal de ${monthLabel(mesKey)} chegou certinha? ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai marcar essas vendas como "Faturado". Continuar?`);
+  const ok = await showConfirm(
+    `Confirmar que a nota fiscal de ${monthLabel(mesKey)} chegou certinha? ${itens.length} venda(s), total ${fmtBRL(total)}.\n\nIsso vai marcar essas vendas como "Faturado".`,
+    { title: 'Confirmar nota recebida' }
+  );
   if (!ok) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Confirmando…'; }
   const ids = itens.map(v => v.id);
   const { error } = await supa.from('vendas').update({ nf_recebida: true }).in('id', ids);
-  if (error) { alert('Erro ao marcar como faturado: ' + error.message); return; }
+  if (error) { showToast('Erro ao marcar como faturado: ' + error.message, 'error'); return; }
   ids.forEach(id => { const v = vendas.find(x => x.id === id); if (v) v.nfRecebida = true; });
+  showToast('Vendas marcadas como faturadas.', 'success');
   render();
 }
 
 function vendaRowHtml(v) {
   return `
           <tr class="${v.confirmado ? 'is-confirmado' : ''} ${v.status==='atrasado' ? 'is-atrasado' : ''}">
-            <td class="center"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'✓':''}</span></td>
-            <td class="center"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="Nota pedida ao contador">${v.nfSolicitada?'✓':''}</span></td>
-            <td class="center"><span class="check-circle nf-check ${v.nfRecebida?'checked':''} ${!v.nfSolicitada?'disabled':''}" data-nfr="${v.id}" title="Nota recebida do contador">${v.nfRecebida?'✓':''}</span></td>
-            <td class="cliente-cell">${v.cliente}</td>
-            <td><span class="plano-tag">${v.plano}</span></td>
-            <td class="num">${fmtBRL(v.valor)}</td>
-            <td class="num">${fmtBRL(v.comissao)}</td>
-            <td>
+            <td class="center" data-label="OK"><span class="check-circle ${v.confirmado?'checked':''}" data-confirm="${v.id}" title="Confirmar recebimento">${v.confirmado?'✓':''}</span></td>
+            <td class="center" data-label="Nota pedida"><span class="check-circle nf-check ${v.nfSolicitada?'checked':''} ${!v.confirmado?'disabled':''}" data-nf="${v.id}" title="Nota pedida ao contador">${v.nfSolicitada?'✓':''}</span></td>
+            <td class="center" data-label="Nota recebida"><span class="check-circle nf-check ${v.nfRecebida?'checked':''} ${!v.nfSolicitada?'disabled':''}" data-nfr="${v.id}" title="Nota recebida do contador">${v.nfRecebida?'✓':''}</span></td>
+            <td class="cliente-cell" data-label="Cliente">${v.cliente}</td>
+            <td data-label="Plano"><span class="plano-tag">${v.plano}</span></td>
+            <td class="num" data-label="Valor">${fmtBRL(v.valor)}</td>
+            <td class="num" data-label="Comissão">${fmtBRL(v.comissao)}</td>
+            <td data-label="Mês">
               ${correctingId === v.id ? `
                 <div class="mes-editor">
                   <input type="month" id="mes-input-${v.id}" value="${v.mesKey}">
@@ -595,14 +746,14 @@ function vendaRowHtml(v) {
                 </div>
               `}
             </td>
-            <td><span class="status-badge ${v.status}">${
+            <td data-label="Situação"><span class="status-badge ${v.status}">${
               v.status==='previsto' ? 'Previsto'
               : v.status==='atrasado' ? 'Atrasado'
               : v.status==='aguardando_nota' ? 'Aguardando nota'
               : v.status==='aguardando_contador' ? 'Aguardando contador'
               : 'Faturado'
             }</span></td>
-            <td>
+            <td data-label="Ações">
               <div class="row-actions">
                 <button class="icon-btn" data-edit="${v.id}" aria-label="Editar">✎</button>
                 <button class="icon-btn" data-del="${v.id}" aria-label="Excluir">🗑</button>
@@ -755,9 +906,9 @@ function resultadosTableHtml(chartData, granularity) {
       <tbody>
         ${chartData.map(d => `
           <tr>
-            <td>${d.label}</td>
-            ${STATUS_ORDER.map(s => `<td class="num">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
-            <td class="num" style="font-weight:600">${fmtBRL(d.total)}</td>
+            <td data-label="Mês">${d.label}</td>
+            ${STATUS_ORDER.map(s => `<td class="num" data-label="${STATUS_LABELS[s]}">${d.byStatus[s].total ? fmtBRL(d.byStatus[s].total) : '—'}</td>`).join('')}
+            <td class="num" data-label="Total" style="font-weight:600">${fmtBRL(d.total)}</td>
           </tr>
         `).join('')}
       </tbody>
@@ -813,6 +964,12 @@ function render() {
   const atrasados = enriched.filter(v => v.status === 'atrasado');
   const totalAtrasado = atrasados.reduce((s,v) => s + v.comissao, 0);
   const qtdVendas = vendas.length;
+
+  const anoAtual = String(now.getFullYear());
+  const totalFaturadoAno = enriched.filter(v => v.status === 'faturado' && v.mesKey && v.mesKey.startsWith(anoAtual)).reduce((s,v)=>s+v.comissao,0);
+  const totalEmAberto = enriched.filter(v => v.status !== 'faturado').reduce((s,v)=>s+v.comissao,0);
+  const ticketMedio = enriched.length ? enriched.reduce((s,v)=>s+v.comissao,0) / enriched.length : 0;
+  const vendasAno = vendas.filter(v => v.dataVenda && v.dataVenda.startsWith(anoAtual)).length;
 
   const keys = [...new Set(enriched.map(v => v.mesKey).filter(Boolean))];
   if (!keys.includes(curKey)) keys.push(curKey);
@@ -896,6 +1053,25 @@ function render() {
         <div class="eyebrow2" style="${atrasados.length ? 'color:var(--atraso)' : ''}">Atrasados (mês já passou)</div>
         <div class="big2" style="${atrasados.length ? 'color:var(--atraso)' : ''}">${fmtBRL(totalAtrasado)}</div>
         <div class="caption2">${atrasados.length} venda(s) para corrigir o mês</div>
+      </div>
+    </div>
+
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <div class="mini-stat-label">Faturado em ${anoAtual}</div>
+        <div class="mini-stat-value">${fmtBRL(totalFaturadoAno)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Em aberto (todas as datas)</div>
+        <div class="mini-stat-value">${fmtBRL(totalEmAberto)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Ticket médio de comissão</div>
+        <div class="mini-stat-value">${fmtBRL(ticketMedio)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Vendas em ${anoAtual}</div>
+        <div class="mini-stat-value">${vendasAno}</div>
       </div>
     </div>
 
@@ -1010,8 +1186,8 @@ function render() {
     });
     el.addEventListener('mouseleave', () => { if (chartTooltip) chartTooltip.style.opacity = '0'; });
   });
-  document.querySelectorAll('[data-pedir-nota]').forEach(el => el.addEventListener('click', () => fecharMes(el.getAttribute('data-pedir-nota'))));
-  document.querySelectorAll('[data-nota-recebida]').forEach(el => el.addEventListener('click', () => marcarMesFaturado(el.getAttribute('data-nota-recebida'))));
+  document.querySelectorAll('[data-pedir-nota]').forEach(el => el.addEventListener('click', () => fecharMes(el.getAttribute('data-pedir-nota'), el)));
+  document.querySelectorAll('[data-nota-recebida]').forEach(el => el.addEventListener('click', () => marcarMesFaturado(el.getAttribute('data-nota-recebida'), el)));
   document.getElementById('search-input')?.addEventListener('input', (e) => { searchTerm = e.target.value; render(); });
   document.querySelectorAll('.month-card').forEach(el => {
     el.addEventListener('click', () => { const k = el.getAttribute('data-month'); selectedMonthKey = selectedMonthKey === k ? null : k; render(); });
@@ -1026,12 +1202,16 @@ function render() {
   document.querySelectorAll('[data-reset]').forEach(el => el.addEventListener('click', () => resetCorrecao(el.getAttribute('data-reset'))));
   document.querySelectorAll('[data-apply-correct]').forEach(el => el.addEventListener('click', () => applyCorrect(el.getAttribute('data-apply-correct'))));
   document.querySelectorAll('[data-cancel-correct]').forEach(el => el.addEventListener('click', cancelCorrect));
-  document.getElementById('btn-save-settings')?.addEventListener('click', () => {
+  document.getElementById('btn-save-settings')?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
     const regra = document.querySelector('input[name="cfg-regra"]:checked')?.value || 'mes_seguinte';
     const dias = parseInt(document.getElementById('cfg-dias').value) || 60;
     const whatsappContador = document.getElementById('cfg-whatsapp').value.trim();
     config = { regra, diasPagamento: dias, whatsappContador };
-    saveConfig(); settingsOpen = false; render();
+    btn.disabled = true; btn.textContent = 'Salvando…';
+    const ok = await saveConfig();
+    if (ok) { showToast('Configurações salvas.', 'success'); settingsOpen = false; }
+    render();
   });
 
   if (panelOpen && editingId) { const v = vendas.find(x => x.id === editingId); if (v) fillForm(v); }
