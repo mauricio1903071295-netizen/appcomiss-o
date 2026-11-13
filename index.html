@@ -94,7 +94,7 @@
   .hero-side.warn { border-color: var(--gold-light); }
   .hero-side .caption2 { font-size: 12px; color: var(--ink-soft); }
 
-  .mini-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 28px; }
+  .mini-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
   .mini-stat { background: var(--card); border: 1px solid var(--paper-line); border-radius: 12px; padding: 14px 16px; transition: border-color 0.15s; }
   .mini-stat:hover { border-color: var(--gold-light); }
   .mini-stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); font-weight: 500; margin-bottom: 6px; }
@@ -1105,7 +1105,9 @@ function render() {
   });
 
   const mesesRealizados = keys.filter(k => k <= curKey);
-  const mediaMensal = mesesRealizados.length ? mesesRealizados.reduce((s,k)=>s+monthStats[k].total,0) / mesesRealizados.length : 0;
+  const mediaVariavel = mesesRealizados.length ? mesesRealizados.reduce((s,k)=>s+monthStats[k].total,0) / mesesRealizados.length : 0;
+  const mediaFixa = mesesRealizados.length ? mesesRealizados.reduce((s,k)=>s+(rendaFixaDoMes(k)?.valor ?? (config.rendaFixaValor || 0)),0) / mesesRealizados.length : 0;
+  const mediaTotal = mediaVariavel + mediaFixa;
 
   let filtered = enriched;
   if (selectedMonthKey) filtered = filtered.filter(v => v.mesKey === selectedMonthKey);
@@ -1205,8 +1207,12 @@ function render() {
         <div class="mini-stat-value">${vendasAno}</div>
       </div>
       <div class="mini-stat">
-        <div class="mini-stat-label">Média mensal</div>
-        <div class="mini-stat-value">${fmtBRL(mediaMensal)}</div>
+        <div class="mini-stat-label">Receita média mensal (fixo + variável)</div>
+        <div class="mini-stat-value">${fmtBRL(mediaTotal)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Média só da parte variável</div>
+        <div class="mini-stat-value">${fmtBRL(mediaVariavel)}</div>
       </div>
     </div>
 
