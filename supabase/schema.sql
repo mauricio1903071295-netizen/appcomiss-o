@@ -36,7 +36,10 @@ create table if not exists public.configuracoes (
   whatsapp_contador text,
   renda_fixa_valor numeric,
   renda_fixa_dia int not null default 5,
-  renda_fixa_nome text not null default 'Receita fixa'
+  renda_fixa_nome text not null default 'Receita fixa',
+  despesas_fixas jsonb not null default '[]'::jsonb,
+  das_aliquota numeric,
+  das_dia int not null default 20
 );
 
 alter table public.configuracoes enable row level security;
@@ -69,5 +72,29 @@ create policy "rendas_fixas_insert_own" on public.rendas_fixas
 create policy "rendas_fixas_update_own" on public.rendas_fixas
   for update using (auth.uid() = user_id);
 create policy "rendas_fixas_delete_own" on public.rendas_fixas
+  for delete using (auth.uid() = user_id);
+
+create table if not exists public.despesas (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  mes text not null,
+  nome text not null,
+  valor numeric not null,
+  tipo text not null default 'fixa',
+  dia int,
+  pago boolean not null default false,
+  created_at timestamptz not null default now(),
+  unique (user_id, mes, nome)
+);
+
+alter table public.despesas enable row level security;
+
+create policy "despesas_select_own" on public.despesas
+  for select using (auth.uid() = user_id);
+create policy "despesas_insert_own" on public.despesas
+  for insert with check (auth.uid() = user_id);
+create policy "despesas_update_own" on public.despesas
+  for update using (auth.uid() = user_id);
+create policy "despesas_delete_own" on public.despesas
   for delete using (auth.uid() = user_id);
 

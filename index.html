@@ -141,7 +141,29 @@
   .settings-panel { background: var(--card); border: 1px solid var(--paper-line); border-radius: 14px; padding: 20px 22px; margin-bottom: 28px; display: none; }
   .settings-panel.open { display: block; }
   .settings-panel h2 { font-family: 'Fraunces', serif; font-size: 16px; margin: 0 0 14px; color: var(--forest); }
+  .settings-panel h2:not(:first-child) { margin-top: 20px; }
   .settings-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .field-hint { font-size: 12px; color: var(--ink-soft); margin-top: 6px; }
+
+  .despesas-fixas-editor { display: flex; flex-direction: column; gap: 8px; }
+  .despesa-fixa-row { display: grid; grid-template-columns: 1.6fr 1fr 0.7fr 1fr 1.2fr auto; gap: 8px; align-items: center; }
+  .despesa-fixa-row input, .despesa-fixa-row select {
+    border: 1px solid var(--paper-line); border-radius: 7px; padding: 8px 9px; font-size: 13px;
+    font-family: 'IBM Plex Sans', sans-serif; background: #fff; color: var(--ink); width: 100%;
+  }
+  .despesa-fixa-row input:focus, .despesa-fixa-row select:focus { outline: none; border-color: var(--forest); box-shadow: 0 0 0 3px rgba(31,58,46,0.12); }
+
+  .despesas-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; margin-bottom: 20px; }
+  .despesa-card { background: var(--card); border: 1px solid var(--paper-line); border-radius: 12px; padding: 16px; }
+  .despesa-card.atrasada { border-color: var(--atraso); }
+  .despesa-card.pago { opacity: 0.75; }
+  .despesa-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px; }
+  .despesa-nome { font-weight: 600; color: var(--ink); font-size: 14px; }
+  .despesa-status { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); }
+  .despesa-status.atrasada { color: var(--atraso); }
+  .despesa-status.pago { color: var(--receber); }
+  .despesa-valor { font-family: 'IBM Plex Mono', monospace; font-size: 20px; font-weight: 500; color: var(--forest); margin-bottom: 2px; }
+  .despesa-dia { font-size: 12px; color: var(--ink-soft); margin-bottom: 12px; }
   .radio-row { display: flex; gap: 16px; font-size: 13px; margin-top: 4px; }
   .radio-row label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
 
@@ -327,6 +349,7 @@
     .settings-grid { grid-template-columns: 1fr; }
     .results-body { flex-direction: column; }
     .ranking-card { flex: 0 0 auto; width: 100%; }
+    .despesa-fixa-row { grid-template-columns: 1fr 1fr; }
   }
   @media (max-width: 480px) {
     .mini-stats { grid-template-columns: 1fr; }
@@ -371,7 +394,12 @@ let session = null;
 let authBusy = false;
 let vendas = [];
 let rendasFixas = [];
-let config = { regra: 'mes_seguinte', diasPagamento: 60, whatsappContador: '', rendaFixaValor: null, rendaFixaDia: 5, rendaFixaNome: 'Receita fixa' };
+let despesas = [];
+let config = {
+  regra: 'mes_seguinte', diasPagamento: 60, whatsappContador: '',
+  rendaFixaValor: null, rendaFixaDia: 5, rendaFixaNome: 'Receita fixa',
+  despesasFixas: [], dasAliquota: null, dasDia: 20
+};
 let panelOpen = false;
 let settingsOpen = false;
 let editingId = null;
@@ -383,6 +411,7 @@ let resultadosGranularity = 'ano';
 let resultadosAno = new Date().getFullYear();
 let showPastMonths = false;
 let correctingId = null;
+let despesasFixasRows = null;
 
 function showToast(message, type) {
   type = type || 'info';
@@ -505,13 +534,17 @@ async function loadConfig() {
     whatsappContador: data.whatsapp_contador || '',
     rendaFixaValor: data.renda_fixa_valor,
     rendaFixaDia: data.renda_fixa_dia || 5,
-    rendaFixaNome: data.renda_fixa_nome || 'Receita fixa'
+    rendaFixaNome: data.renda_fixa_nome || 'Receita fixa',
+    despesasFixas: Array.isArray(data.despesas_fixas) ? data.despesas_fixas : [],
+    dasAliquota: data.das_aliquota,
+    dasDia: data.das_dia || 20
   };
 }
 async function saveConfig() {
   const { error } = await supa.from('configuracoes').upsert({
     user_id: session.user.id, regra: config.regra, dias_pagamento: config.diasPagamento, whatsapp_contador: config.whatsappContador,
-    renda_fixa_valor: config.rendaFixaValor, renda_fixa_dia: config.rendaFixaDia, renda_fixa_nome: config.rendaFixaNome
+    renda_fixa_valor: config.rendaFixaValor, renda_fixa_dia: config.rendaFixaDia, renda_fixa_nome: config.rendaFixaNome,
+    despesas_fixas: config.despesasFixas || [], das_aliquota: config.dasAliquota, das_dia: config.dasDia
   });
   if (error) { showToast('Não foi possível salvar as configurações: ' + error.message, 'error'); return false; }
   return true;
@@ -532,6 +565,57 @@ async function ensureRendaFixaMesAtual() {
   const { data, error } = await supa.from('rendas_fixas').insert({ mes: curKey, valor: config.rendaFixaValor }).select().maybeSingle();
   if (error) { console.error('Erro ao criar receita fixa do mês:', error); return; }
   rendasFixas.push(rendaFixaFromRow(data));
+}
+
+function prevMonthKey(mesKey) {
+  const [y, m] = mesKey.split('-').map(Number);
+  return monthKeyFromDate(new Date(y, m - 2, 1));
+}
+function faturamentoDoMes(mesKey) {
+  const totalComissoes = getEnriched().filter(v => v.mesKey === mesKey).reduce((s, v) => s + v.comissao, 0);
+  return totalComissoes + rendaFixaValorDoMes(mesKey);
+}
+function despesaFromRow(r) {
+  return { id: r.id, mes: r.mes, nome: r.nome, valor: Number(r.valor), tipo: r.tipo, dia: r.dia, pago: r.pago };
+}
+async function loadDespesas() {
+  const { data, error } = await supa.from('despesas').select('*').order('mes');
+  if (error) { console.error('Erro ao carregar despesas:', error); despesas = []; return; }
+  despesas = (data || []).map(despesaFromRow);
+}
+async function ensureDespesasMesAtual() {
+  const now = new Date();
+  const curKey = monthKeyFromDate(now);
+  const mesNum = now.getMonth() + 1;
+  for (const df of (config.despesasFixas || [])) {
+    const aplica = df.recorrencia === 'anual' ? Number(df.mes) === mesNum : true;
+    if (!aplica) continue;
+    if (despesas.some(d => d.mes === curKey && d.nome === df.nome)) continue;
+    const { data, error } = await supa.from('despesas').insert({
+      mes: curKey, nome: df.nome, valor: df.valor, dia: df.dia || null, tipo: 'fixa'
+    }).select().maybeSingle();
+    if (error) { console.error('Erro ao criar despesa fixa do mês:', error); continue; }
+    despesas.push(despesaFromRow(data));
+  }
+  if (config.dasAliquota && !despesas.some(d => d.mes === curKey && d.tipo === 'das')) {
+    const fatAnterior = faturamentoDoMes(prevMonthKey(curKey));
+    if (fatAnterior > 0) {
+      const valorDas = Math.round(fatAnterior * (config.dasAliquota / 100) * 100) / 100;
+      const { data, error } = await supa.from('despesas').insert({
+        mes: curKey, nome: 'DAS', valor: valorDas, dia: config.dasDia || 20, tipo: 'das'
+      }).select().maybeSingle();
+      if (error) { console.error('Erro ao criar DAS do mês:', error); }
+      else despesas.push(despesaFromRow(data));
+    }
+  }
+}
+async function toggleDespesaPago(id) {
+  const d = despesas.find(x => x.id === id); if (!d) return;
+  const pago = !d.pago;
+  const { error } = await supa.from('despesas').update({ pago }).eq('id', id);
+  if (error) { showToast('Erro: ' + error.message, 'error'); return; }
+  d.pago = pago;
+  render();
 }
 
 function renderLoading() {
@@ -585,6 +669,8 @@ async function boot(newSession) {
   await loadConfig();
   await loadRendasFixas();
   await ensureRendaFixaMesAtual();
+  await loadDespesas();
+  await ensureDespesasMesAtual();
   render();
 }
 function initSupabase() {
@@ -660,7 +746,48 @@ async function deleteVenda(id) {
   showToast('Venda removida.', 'success');
   render();
 }
-function toggleSettings() { settingsOpen = !settingsOpen; render(); }
+function toggleSettings() {
+  settingsOpen = !settingsOpen;
+  if (settingsOpen && despesasFixasRows === null) {
+    despesasFixasRows = (config.despesasFixas && config.despesasFixas.length)
+      ? config.despesasFixas.map(d => ({ ...d }))
+      : [
+          { nome: 'Contador', valor: 260, dia: 20, recorrencia: 'mensal', mes: '' },
+          { nome: 'INSS', valor: 275, dia: 20, recorrencia: 'mensal', mes: '' }
+        ];
+  }
+  render();
+}
+function syncDespesasFixasRowsFromDom() {
+  if (!despesasFixasRows) return;
+  despesasFixasRows.forEach((row, idx) => {
+    const elNome = document.getElementById('df-nome-' + idx);
+    const elValor = document.getElementById('df-valor-' + idx);
+    const elDia = document.getElementById('df-dia-' + idx);
+    const elRec = document.getElementById('df-recorrencia-' + idx);
+    const elMes = document.getElementById('df-mes-' + idx);
+    if (elNome) row.nome = elNome.value;
+    if (elValor) row.valor = elValor.value;
+    if (elDia) row.dia = elDia.value;
+    if (elRec) row.recorrencia = elRec.value;
+    if (elMes) row.mes = elMes.value;
+  });
+}
+function addDespesaFixaRow() {
+  syncDespesasFixasRowsFromDom();
+  despesasFixasRows.push({ nome: '', valor: '', dia: 20, recorrencia: 'mensal', mes: '' });
+  render();
+}
+function removeDespesaFixaRow(idx) {
+  syncDespesasFixasRowsFromDom();
+  despesasFixasRows.splice(idx, 1);
+  render();
+}
+function setDespesaFixaRecorrencia(idx, value) {
+  syncDespesasFixasRowsFromDom();
+  despesasFixasRows[idx].recorrencia = value;
+  render();
+}
 
 async function toggleConfirmado(id) {
   const v = vendas.find(x => x.id === id); if (!v) return;
@@ -1127,6 +1254,82 @@ function resultadosSectionHtml(enriched, keys) {
   `;
 }
 
+function despesaStatusInfo(d) {
+  if (d.pago) return { label: 'Pago', atrasada: false };
+  const hoje = new Date();
+  const [y, m] = d.mes.split('-').map(Number);
+  const vencimento = new Date(y, m - 1, d.dia || 20);
+  return { label: vencimento < hoje ? 'Atrasada' : 'A pagar', atrasada: vencimento < hoje };
+}
+function despesaCardHtml(d) {
+  const info = despesaStatusInfo(d);
+  return `
+    <div class="despesa-card ${d.pago ? 'pago' : ''} ${info.atrasada ? 'atrasada' : ''}">
+      <div class="despesa-card-top">
+        <span class="despesa-nome">${d.nome}</span>
+        <span class="despesa-status ${info.atrasada ? 'atrasada' : d.pago ? 'pago' : ''}">${info.label}</span>
+      </div>
+      <div class="despesa-valor">${fmtBRL(d.valor)}</div>
+      <div class="despesa-dia">${d.dia ? 'Vencimento dia ' + String(d.dia).padStart(2, '0') : ''}</div>
+      <button class="btn btn-sm ${d.pago ? 'btn-ghost' : 'btn-primary'}" data-despesa-pago="${d.id}">${d.pago ? 'Reabrir' : 'Marcar como pago'}</button>
+    </div>
+  `;
+}
+function despesasTabHtml() {
+  const curKey = monthKeyFromDate(new Date());
+  const doMes = despesas.filter(d => d.mes === curKey);
+  const totalDespesasMes = doMes.reduce((s, d) => s + d.valor, 0);
+  const totalPago = doMes.filter(d => d.pago).reduce((s, d) => s + d.valor, 0);
+  const totalAberto = totalDespesasMes - totalPago;
+  const fatMes = faturamentoDoMes(curKey);
+  const resultadoLiquido = fatMes - totalDespesasMes;
+  const mesesComDespesas = [...new Set(despesas.map(d => d.mes))].sort().reverse();
+
+  return `
+    <h2 style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;color:var(--forest);margin:0 0 16px">Despesas de ${monthLabel(curKey)}</h2>
+    <div class="mini-stats" style="margin-bottom:24px">
+      <div class="mini-stat">
+        <div class="mini-stat-label">Despesas no mês</div>
+        <div class="mini-stat-value">${fmtBRL(totalDespesasMes)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Já pago</div>
+        <div class="mini-stat-value">${fmtBRL(totalPago)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Em aberto</div>
+        <div class="mini-stat-value">${fmtBRL(totalAberto)}</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-label">Receita líquida no mês</div>
+        <div class="mini-stat-value">${fmtBRL(resultadoLiquido)}</div>
+      </div>
+    </div>
+    ${doMes.length ? `
+      <div class="despesas-grid">${doMes.map(despesaCardHtml).join('')}</div>
+    ` : `
+      <div class="empty">
+        <span style="font-size:32px">🧾</span>
+        <p>Nenhuma despesa configurada ainda. Vá em ⚙ Config e cadastre o contador, INSS, DAS etc.</p>
+      </div>
+    `}
+    ${mesesComDespesas.length > 1 ? `
+      <div class="strip-label" style="margin-top:28px">Histórico de despesas</div>
+      <table class="results-table">
+        <thead><tr><th>Mês</th><th class="num">Total</th><th class="num">Pago</th></tr></thead>
+        <tbody>
+          ${mesesComDespesas.map(k => {
+            const items = despesas.filter(d => d.mes === k);
+            const total = items.reduce((s, d) => s + d.valor, 0);
+            const pago = items.filter(d => d.pago).reduce((s, d) => s + d.valor, 0);
+            return `<tr><td data-label="Mês">${monthLabel(k)}</td><td class="num" data-label="Total">${fmtBRL(total)}</td><td class="num" data-label="Pago">${fmtBRL(pago)}</td></tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    ` : ''}
+  `;
+}
+
 function render() {
   const app = document.getElementById('app');
   const enriched = getEnriched();
@@ -1230,6 +1433,39 @@ function render() {
           <input type="number" min="1" max="28" id="cfg-renda-dia" value="${config.rendaFixaDia || 5}">
         </div>
       </div>
+      <h2>Despesas fixas do negócio</h2>
+      <div class="despesas-fixas-editor">
+        ${(despesasFixasRows || []).map((row, idx) => `
+          <div class="despesa-fixa-row">
+            <input type="text" id="df-nome-${idx}" placeholder="Nome (ex: Contador)" value="${row.nome || ''}">
+            <input type="number" step="0.01" id="df-valor-${idx}" placeholder="Valor (R$)" value="${row.valor ?? ''}">
+            <input type="number" min="1" max="28" id="df-dia-${idx}" placeholder="Dia" value="${row.dia ?? ''}">
+            <select id="df-recorrencia-${idx}" data-df-rec-idx="${idx}">
+              <option value="mensal" ${row.recorrencia === 'mensal' ? 'selected' : ''}>Mensal</option>
+              <option value="anual" ${row.recorrencia === 'anual' ? 'selected' : ''}>Anual</option>
+            </select>
+            ${row.recorrencia === 'anual' ? `
+              <select id="df-mes-${idx}">
+                ${MESES_LONGOS.map((m, i) => `<option value="${i + 1}" ${Number(row.mes) === i + 1 ? 'selected' : ''}>${m}</option>`).join('')}
+              </select>
+            ` : '<span></span>'}
+            <button type="button" class="icon-btn" data-df-remove="${idx}" aria-label="Remover despesa">✕</button>
+          </div>
+        `).join('')}
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-add-despesa-fixa">+ Adicionar despesa fixa</button>
+      </div>
+      <h2>DAS (estimado pelo faturamento do mês anterior)</h2>
+      <div class="settings-grid">
+        <div class="field">
+          <label>Alíquota efetiva (%)</label>
+          <input type="number" step="0.01" id="cfg-das-aliquota" placeholder="Ex: 6" value="${config.dasAliquota ?? ''}">
+        </div>
+        <div class="field">
+          <label>Dia do vencimento</label>
+          <input type="number" min="1" max="28" id="cfg-das-dia" value="${config.dasDia || 20}">
+        </div>
+      </div>
+      <div class="field-hint">Dica: pegue o valor do último boleto do DAS ÷ o faturamento daquele mês × 100 pra achar sua alíquota efetiva.</div>
       <div class="panel-actions">
         <button class="btn btn-primary btn-sm" id="btn-save-settings">Salvar regra</button>
       </div>
@@ -1238,6 +1474,7 @@ function render() {
     <div class="tabs-row">
       <button class="tab-btn ${activeTab==='checklist' ? 'active' : ''}" data-tab="checklist">Checklist</button>
       <button class="tab-btn ${activeTab==='resultados' ? 'active' : ''}" data-tab="resultados">Resultados</button>
+      <button class="tab-btn ${activeTab==='despesas' ? 'active' : ''}" data-tab="despesas">Despesas</button>
     </div>
 
     <div class="hero">
@@ -1286,7 +1523,7 @@ function render() {
       </div>
     </div>
 
-    ${activeTab === 'resultados' ? resultadosSectionHtml(enriched, keys) : `
+    ${activeTab === 'resultados' ? resultadosSectionHtml(enriched, keys) : activeTab === 'despesas' ? despesasTabHtml() : `
 
     ${keys.length ? `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1433,15 +1670,38 @@ function render() {
     const rendaFixaValorRaw = document.getElementById('cfg-renda-valor').value;
     const rendaFixaValor = rendaFixaValorRaw ? parseFloat(rendaFixaValorRaw) : null;
     const rendaFixaDia = Math.min(28, Math.max(1, parseInt(document.getElementById('cfg-renda-dia').value) || 5));
-    config = { regra, diasPagamento: dias, whatsappContador, rendaFixaNome, rendaFixaValor, rendaFixaDia };
+    syncDespesasFixasRowsFromDom();
+    const despesasFixas = (despesasFixasRows || [])
+      .filter(r => r.nome && r.nome.trim() && r.valor !== '' && !isNaN(parseFloat(r.valor)))
+      .map(r => ({
+        nome: r.nome.trim(),
+        valor: parseFloat(r.valor),
+        dia: Math.min(28, Math.max(1, parseInt(r.dia) || 20)),
+        recorrencia: r.recorrencia === 'anual' ? 'anual' : 'mensal',
+        mes: r.recorrencia === 'anual' ? (parseInt(r.mes) || 1) : ''
+      }));
+    const dasAliquotaRaw = document.getElementById('cfg-das-aliquota').value;
+    const dasAliquota = dasAliquotaRaw ? parseFloat(dasAliquotaRaw) : null;
+    const dasDia = Math.min(28, Math.max(1, parseInt(document.getElementById('cfg-das-dia').value) || 20));
+    config = { regra, diasPagamento: dias, whatsappContador, rendaFixaNome, rendaFixaValor, rendaFixaDia, despesasFixas, dasAliquota, dasDia };
     btn.disabled = true; btn.textContent = 'Salvando…';
     const ok = await saveConfig();
-    if (ok) { await ensureRendaFixaMesAtual(); showToast('Configurações salvas.', 'success'); settingsOpen = false; }
+    if (ok) {
+      await ensureRendaFixaMesAtual();
+      await ensureDespesasMesAtual();
+      despesasFixasRows = null;
+      showToast('Configurações salvas.', 'success');
+      settingsOpen = false;
+    }
     render();
   });
   document.querySelectorAll('[data-rf-confirmar]').forEach(el => el.addEventListener('click', () => toggleRendaFixaConfirmado(el.getAttribute('data-rf-confirmar'))));
   document.querySelectorAll('[data-rf-pedir-nota]').forEach(el => el.addEventListener('click', (e) => pedirNotaRendaFixa(el.getAttribute('data-rf-pedir-nota'), e.currentTarget)));
   document.querySelectorAll('[data-rf-nota-recebida]').forEach(el => el.addEventListener('click', (e) => notaRecebidaRendaFixa(el.getAttribute('data-rf-nota-recebida'), e.currentTarget)));
+  document.getElementById('btn-add-despesa-fixa')?.addEventListener('click', addDespesaFixaRow);
+  document.querySelectorAll('[data-df-remove]').forEach(el => el.addEventListener('click', () => removeDespesaFixaRow(parseInt(el.getAttribute('data-df-remove')))));
+  document.querySelectorAll('[data-df-rec-idx]').forEach(el => el.addEventListener('change', () => setDespesaFixaRecorrencia(parseInt(el.getAttribute('data-df-rec-idx')), el.value)));
+  document.querySelectorAll('[data-despesa-pago]').forEach(el => el.addEventListener('click', () => toggleDespesaPago(el.getAttribute('data-despesa-pago'))));
 
   if (panelOpen && editingId) { const v = vendas.find(x => x.id === editingId); if (v) fillForm(v); }
 }
